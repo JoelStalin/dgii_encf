@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: getupnet-api
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; frame-src 'none'" always;
+      add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+      add_header Referrer-Policy "no-referrer" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-Frame-Options "DENY" always;
+spec:
+  rules:
+    - host: api.getupnet.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: getupnet-api
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - api.getupnet.local
+      secretName: api-tls

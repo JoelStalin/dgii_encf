@@ -1,0 +1,83 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "app/**"
+      - "alembic/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "deploy/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "alembic/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "deploy/**"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    env:
+      POETRY_VIRTUALENVS_CREATE: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install toolchain
+        run: |
+          pip install poetry ruff bandit
+          poetry install --with dev
+      - name: Ruff lint
+        run: ruff check app
+      - name: Static analysis (Bandit)
+        run: bandit -r app -ll
+      - name: Run tests
+        run: poetry run pytest --cov=app --cov-report=xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.xml
+
+  docker-build:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile.api
+          push: false
+          tags: getupnet/api:test
+
+  security-audit:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependency scanner
+        run: |
+          pip install safety
+          pip install poetry
+          poetry install --with dev
+      - name: Safety check
+        run: safety check --full-report
+        continue-on-error: true

@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: getupnet-api
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - getupnet
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: getupnet-api
+  podMetricsEndpoints:
+    - path: /metrics
+      port: http
+      interval: 30s
+      scheme: http
+      relabelings:
+        - action: replace
+          targetLabel: tenant
+          replacement: platform

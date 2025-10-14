@@ -1,8 +1,8 @@
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Spinner } from "@getupnet/ui";
 import { useLoginMutation } from "../api/auth";
 import { useAuth } from "../auth/use-auth";
-import { Spinner } from "../components/Spinner";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,43 +34,45 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950">
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6 rounded-xl bg-slate-900 p-8 shadow-xl">
-        <header className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold text-white">GetUpNet Admin</h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-2 text-center">
+          <CardTitle>GetUpNet Admin</CardTitle>
           <p className="text-sm text-slate-300">Autenticación multi-factor con controles RBAC.</p>
-        </header>
-        <div className="space-y-4">
-          <label className="block space-y-2">
-            <span className="text-sm text-slate-200">Correo electrónico</span>
-            <input
-              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </label>
-          <label className="block space-y-2">
-            <span className="text-sm text-slate-200">Contraseña</span>
-            <input
-              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <button
-          className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-          type="submit"
-          disabled={isPending}
-        >
-          {isPending ? <Spinner label="Validando" /> : "Ingresar"}
-        </button>
-        {isError ? <p className="text-center text-sm text-red-400">Credenciales inválidas o MFA requerido.</p> : null}
-      </form>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <Button className="w-full" type="submit" disabled={isPending}>
+              {isPending ? <Spinner label="Validando" /> : "Ingresar"}
+            </Button>
+            {isError ? <p className="text-center text-sm text-red-400">Credenciales inválidas o MFA requerido.</p> : null}
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: getupnet-api
+  labels:
+    app.kubernetes.io/name: getupnet-api
+    app.kubernetes.io/part-of: getupnet
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: getupnet-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: getupnet-api
+        app.kubernetes.io/part-of: getupnet
+        observability.getupnet.io/scrape: "true"
+    spec:
+      serviceAccountName: api-sa
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: api
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/getupnet-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: api-settings
+            - secretRef:
+                name: api-secrets
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: getupnet-api
+            - name: GUNICORN_WORKERS
+              value: "4"
+            - name: ENABLE_RATE_LIMITING
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              httpHeaders:
+                - name: X-Health-Check
+                  value: k8s
+            periodSeconds: 15
+            initialDelaySeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            initialDelaySeconds: 30
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1024Mi"
+          volumeMounts:
+            - name: tmp-metrics
+              mountPath: /tmp/metrics
+      volumes:
+        - name: tmp-metrics
+          emptyDir: {}
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: workloads
+          effect: NoSchedule
+      nodeSelector:
+        node.kubernetes.io/lifecycle: spot

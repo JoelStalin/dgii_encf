@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Spinner } from "@getupnet/ui";
 import { api } from "../api/client";
 import { useAuth } from "../auth/use-auth";
 import type { AuthSession } from "../store/auth-store";
-import { Spinner } from "../components/Spinner";
 
 interface LocationState {
   email: string;
@@ -49,36 +49,37 @@ export function MFAPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950">
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6 rounded-xl bg-slate-900 p-8 shadow-xl">
-        <header className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold text-white">Verificación MFA</h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-2 text-center">
+          <CardTitle>Verificación MFA</CardTitle>
           <p className="text-sm text-slate-300">Ingresa el código TOTP generado en tu dispositivo seguro.</p>
-        </header>
-        <div className="space-y-4">
-          <label className="block space-y-2">
-            <span className="text-sm text-slate-200">Código</span>
-            <input
-              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-center text-lg tracking-[0.35em] focus:border-primary focus:outline-none"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <button
-          className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? <Spinner label="Verificando" /> : "Confirmar"}
-        </button>
-        {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
-      </form>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="mfa-code">Código</Label>
+                <Input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  className="text-center text-lg tracking-[0.35em]"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <Button className="w-full" type="submit" disabled={loading}>
+              {loading ? <Spinner label="Verificando" /> : "Confirmar"}
+            </Button>
+            {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

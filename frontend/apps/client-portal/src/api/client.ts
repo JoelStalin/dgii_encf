@@ -1,33 +1,9 @@
-import axios from "axios";
+import { createApiClient } from "@getupnet/api-client";
 import { useAuthStore } from "../store/auth-store";
 
-const api = axios.create({
+export const api = createApiClient({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000",
-  withCredentials: true,
+  getAccessToken: () => useAuthStore.getState().accessToken,
+  getTenantId: () => useAuthStore.getState().user?.tenantId ?? undefined,
+  onUnauthorized: () => useAuthStore.getState().clearSession(),
 });
-
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  const tenantId = useAuthStore.getState().user?.tenantId;
-  if (tenantId) {
-    config.headers = config.headers ?? {};
-    config.headers["X-Tenant-ID"] = tenantId;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().clearSession();
-    }
-    return Promise.reject(error);
-  }
-);
-
-export { api };
