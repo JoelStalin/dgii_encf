@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-service
+  labels:
+    app.kubernetes.io/name: client-service
+    app.kubernetes.io/part-of: getupnet
+    getupnet.io/trusted: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: client-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: client-service
+        app.kubernetes.io/part-of: getupnet
+        getupnet.io/trusted: "true"
+    spec:
+      serviceAccountName: client-service
+      containers:
+        - name: client
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/getupnet/client-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: client-service
+            - name: ENABLE_RI_DOWNLOAD
+              value: "true"
+          envFrom:
+            - configMapRef:
+                name: getupnet-common
+            - secretRef:
+                name: getupnet-secrets
+          resources:
+            requests:
+              cpu: 300m
+              memory: 256Mi
+            limits:
+              cpu: 600m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      nodeSelector:
+        getupnet.io/workload: api

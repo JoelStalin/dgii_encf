@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: getupnet-app
+  labels:
+    app.kubernetes.io/name: getupnet
+    app.kubernetes.io/part-of: getupnet

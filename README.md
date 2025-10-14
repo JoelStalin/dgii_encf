@@ -33,3 +33,5 @@ chmod +x scripts/deploy.sh
 El script verifica la existencia de `.env.development`, construye las imágenes, ejecuta las migraciones de Alembic y deja la API expuesta en `https://localhost:8443` detrás de Nginx.
 
 Consulta la guía completa en `docs/guide/` para detalles de operación, seguridad y cumplimiento DGII, incluyendo el paso a paso de despliegue en AWS descrito en `docs/guide/15-implementacion-aws.md`.
+
+Consulta la guía de arquitectura detallada en `docs/guide/16-arquitectura-eks.md` para la topología de microservicios y el plan EKS.

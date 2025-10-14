@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-service
+  labels:
+    app.kubernetes.io/name: client-service
+    app.kubernetes.io/part-of: getupnet
+spec:
+  selector:
+    app.kubernetes.io/name: client-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

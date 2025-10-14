@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sign-service
+  labels:
+    app.kubernetes.io/name: sign-service
+    app.kubernetes.io/part-of: getupnet
+spec:
+  selector:
+    app.kubernetes.io/name: sign-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

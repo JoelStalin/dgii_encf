@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: getupnet-app
+
+resources:
+  - namespace.yaml
+  - config/configmap-common.yaml
+  - rbac/tenants-network-policy.yaml
+  - services/auth/serviceaccount.yaml
+  - services/auth/deployment.yaml
+  - services/auth/service.yaml
+  - services/sign/serviceaccount.yaml
+  - services/sign/deployment.yaml
+  - services/sign/service.yaml
+  - services/dgii-client/serviceaccount.yaml
+  - services/dgii-client/deployment.yaml
+  - services/dgii-client/service.yaml
+  - services/billing/serviceaccount.yaml
+  - services/billing/deployment.yaml
+  - services/billing/service.yaml
+  - services/approval/serviceaccount.yaml
+  - services/approval/deployment.yaml
+  - services/approval/service.yaml
+  - services/plans/serviceaccount.yaml
+  - services/plans/deployment.yaml
+  - services/plans/service.yaml
+  - services/admin/serviceaccount.yaml
+  - services/admin/deployment.yaml
+  - services/admin/service.yaml
+  - services/client/serviceaccount.yaml
+  - services/client/deployment.yaml
+  - services/client/service.yaml
+  - services/logger/serviceaccount.yaml
+  - services/logger/deployment.yaml
+  - services/logger/service.yaml
+  - services/worker/serviceaccount.yaml
+  - services/worker/deployment.yaml
+
+configurations:
+  - kustomizeconfig.yaml

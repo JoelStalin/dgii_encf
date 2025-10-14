@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logger-service
+  labels:
+    app.kubernetes.io/name: logger-service
+    app.kubernetes.io/part-of: getupnet
+    getupnet.io/trusted: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: logger-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: logger-service
+        app.kubernetes.io/part-of: getupnet
+        getupnet.io/trusted: "true"
+    spec:
+      serviceAccountName: logger-service
+      containers:
+        - name: logger
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/getupnet/logger-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: logger-service
+            - name: AUDIT_BUCKET
+              value: getupnet-audit
+          envFrom:
+            - configMapRef:
+                name: getupnet-common
+            - secretRef:
+                name: getupnet-secrets
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      nodeSelector:
+        getupnet.io/workload: api
