@@ -1,0 +1,10 @@
+groups:
+  - name: getupnet
+    rules:
+      - alert: ApiDown
+        expr: up{job="api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API no responde"
