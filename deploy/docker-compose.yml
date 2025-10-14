@@ -1,0 +1,31 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: getupnet
+      POSTGRES_USER: getupnet
+      POSTGRES_PASSWORD: getupnet
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    env_file:
+      - ../.env.development
+    depends_on:
+      - db
+      - redis
+  nginx:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.nginx
+    ports:
+      - "8443:443"
+    depends_on:
+      - api
+volumes:
+  db-data:

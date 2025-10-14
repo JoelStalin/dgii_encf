@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>RI - {{ encf }}</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+  <header>
+    <h1>Representación Impresa e-CF {{ encf }}</h1>
+    <p>RNC Emisor: {{ rnc_emisor }}</p>
+    <p>RNC Comprador: {{ rnc_comprador }}</p>
+  </header>
+  <section>
+    <h2>Totales</h2>
+    <p>Total: {{ total }}</p>
+    <p>Modo: {{ mode }}</p>
+  </section>
+  <footer>
+    <p>Generado el {{ generado_en }}</p>
+  </footer>
+</body>
+</html>
