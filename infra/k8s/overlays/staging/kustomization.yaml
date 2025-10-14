@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+nameSuffix: -stg
+configMapGenerator:
+  - name: api-settings
+    behavior: merge
+    literals:
+      - LOG_LEVEL=debug
+      - FRONTEND_ADMIN_URL=https://admin.stg.getupnet.do
+      - FRONTEND_CLIENT_URL=https://app.stg.getupnet.do
+patches:
+  - path: patch-deployment.yaml
+  - path: patch-ingress.yaml

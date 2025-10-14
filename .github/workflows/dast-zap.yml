@@ -1,0 +1,28 @@
+name: DAST ZAP
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL pública del entorno a escanear"
+        required: false
+
+jobs:
+  zap-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ejecutar ZAP Baseline
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: ${{ github.event.inputs.target_url || secrets.ZAP_BASE_URL || 'https://staging.getupnet.do' }}
+          cmd_options: "-a -j --ignore-rule 10096"
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: report_html.html

@@ -32,7 +32,7 @@ def persist_rfce(session: Session, tenant_id: int, request: RFCESendRequest, res
         resumen_xml_path=f"rfce/{request.encf}.xml",
         estado=response.estado,
         mensajes=response.mensajes,
-        secuencia_utilizada=response.secuenciaUtilizada,
+        secuencia_utilizada=response.secuencia_utilizada,
     )
     session.add(rfce)
     session.flush()

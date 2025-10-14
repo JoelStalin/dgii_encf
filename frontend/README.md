@@ -2,19 +2,22 @@
 
 Este directorio contiene los frontends en React + Vite + Tailwind para el ecosistema GetUpNet.
 
-## Apps incluidas
+## Estructura
 
 - `apps/admin-portal`: Panel de plataforma para gestionar tenants, planes tarifarios, auditoría y usuarios RBAC.
 - `apps/client-portal`: Portal para tenants con emisión de e-CF/RFCE, aprobaciones y administración de certificados.
+- `packages/ui`: Biblioteca de componentes compartidos basada en Tailwind + shadcn/ui, exporta botones, inputs, tarjetas, badges y spinner accesibles.
+- `packages/api-client`: Cliente Axios pre-configurado con soporte JWT, multi-tenant (`X-Tenant-ID`) y cabeceras de trazabilidad.
 
-Cada aplicación expone scripts `dev`, `build` y `preview`. Se recomienda trabajar con `pnpm`:
+El workspace se orquesta con `pnpm`:
 
 ```bash
-pnpm install --filter ./apps/admin-portal
+pnpm install
 pnpm --filter @getupnet/admin-portal dev
-
-pnpm install --filter ./apps/client-portal
 pnpm --filter @getupnet/client-portal dev
+
+# Compilación de ambas apps
+pnpm build
 ```
 
 ## Estándares implementados

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-settings
+  labels:
+    app.kubernetes.io/name: getupnet-api
+    app.kubernetes.io/component: configuration
+    app.kubernetes.io/part-of: getupnet
+    compliance.getupnet.io/pci: "true"
+  annotations:
+    config.kubernetes.io/managed-by: kustomize
+
+data:
+  LOG_LEVEL: info
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4317"
+  PROMETHEUS_MULTIPROC_DIR: "/tmp/metrics"
+  ENABLE_ECS_MODE: "false"

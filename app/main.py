@@ -1,7 +1,7 @@
 """Punto de entrada FastAPI para GetUpNet."""
 from __future__ import annotations
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -10,6 +10,8 @@ from app.billing.routes import router as billing_router
 from app.dgii.routes import router as dgii_router
 from app.receiver.routes import router as receiver_router
 from app.ri.routes import router as ri_router
+from app.models.base import Base
+from app.shared.database import engine
 from app.shared.settings import settings
 from app.shared.tracing import ensure_trace_id
 from app.sign.routes import router as sign_router
@@ -68,3 +70,6 @@ app.include_router(dgii_router, prefix="/api", tags=["DGII"])
 app.include_router(receiver_router, prefix="/api", tags=["Recepcion"])
 app.include_router(billing_router, prefix="/api", tags=["Facturacion"])
 app.include_router(ri_router, prefix="/api", tags=["RI"])
+
+if settings.database_url.startswith("sqlite"):
+    Base.metadata.create_all(bind=engine)

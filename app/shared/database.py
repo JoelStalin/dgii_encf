@@ -2,14 +2,23 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Any, Iterator
 
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.shared.settings import settings
 
-engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+engine_kwargs: dict[str, Any] = {"pool_pre_ping": True, "future": True}
+
+if settings.database_url.startswith("sqlite"):
+    engine_kwargs.update({
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    })
+
+engine = create_engine(settings.database_url, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
 
 
