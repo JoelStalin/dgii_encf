@@ -16,9 +16,20 @@ GetUpNet es una referencia arquitectónica basada en FastAPI para la emisión y 
 ```bash
 git clone https://example.com/getupnet.git
 cd getupnet
-cp .env.example .env.development
+python scripts/setup_env.py
 poetry install
 uvicorn app.main:app --reload
 ```
 
-Consulta la guía completa en `docs/guide/` para detalles de operación, seguridad y cumplimiento DGII.
+## Despliegue automatizado con Docker Compose
+
+Para levantar la plataforma con la pila de contenedores incluida:
+
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+El script verifica la existencia de `.env.development`, construye las imágenes, ejecuta las migraciones de Alembic y deja la API expuesta en `https://localhost:8443` detrás de Nginx.
+
+Consulta la guía completa en `docs/guide/` para detalles de operación, seguridad y cumplimiento DGII, incluyendo el paso a paso de despliegue en AWS descrito en `docs/guide/15-implementacion-aws.md`.
