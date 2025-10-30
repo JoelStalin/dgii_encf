@@ -1,25 +1,55 @@
 # GetUpNet — Plataforma DGII e-CF
 
-GetUpNet es una referencia arquitectónica basada en FastAPI para la emisión y recepción de comprobantes fiscales electrónicos (e-CF) de la DGII República Dominicana. El proyecto es multi-tenant, seguro y preparado para integraciones con Odoo 18.
+GetUpNet es una referencia arquitectónica basada en FastAPI para la emisión y recepción de comprobantes fiscales electrónicos (e-CF) de la DGII República Dominicana. Está preparada para escenarios multi-tenant, integra mecanismos de seguridad alineados a ISO/IEC 25010, PCI DSS 4.0 y OWASP 2025, e incluye flujos de integración con Odoo 18.
 
 ## Características destacadas
 
 - Microservicios de autenticación, firmado, integración DGII, recepción sandbox, facturación y representación impresa.
 - Modelado de datos en PostgreSQL mediante SQLAlchemy 2 y migraciones Alembic.
-- Seguridad de acuerdo con ISO/IEC 25010, PCI DSS 4.0 y OWASP 2025.
-- Almacenamiento WORM, auditoría con hash encadenado y trazabilidad distribuida.
-- Contenedores Docker, despliegue con Nginx (TLS 1.3) y observabilidad (Prometheus/Grafana/Loki).
+- Seguridad con almacenamiento WORM, auditoría con hash encadenado y trazabilidad distribuida.
+- Observabilidad con Prometheus/Grafana/Loki y despliegue con Nginx (TLS 1.3).
 - Suite de pruebas con Pytest (unitarias y flujo e2e básico).
 
-## Cómo iniciar
+## Requisitos previos
+
+- `Python 3.11`
+- `Poetry 1.8+`
+- `Docker` y `docker compose` (opcionales para despliegues locales con contenedores)
+- Acceso a un motor PostgreSQL para entornos no SQLite
+
+## Instalación rápida
+
+1. Clona el repositorio y ubícate en la raíz del proyecto:
+   ```bash
+   git clone <url-del-repositorio>
+   cd dgii_encf
+   ```
+2. Asegura permisos de ejecución para el instalador:
+   ```bash
+   chmod +x scripts/install.sh
+   ```
+3. Ejecuta el instalador interactivo:
+   ```bash
+   ./scripts/install.sh
+   ```
+
+El instalador verifica dependencias del sistema, crea `.env.development` a partir de `.env.example` si aún no existe e instala las dependencias del proyecto con Poetry. Revisa el archivo generado y actualiza las credenciales sensibles antes de levantar servicios conectados a terceros.
+
+## Configuración del entorno
+
+- Variables de entorno: ajusta `.env.development` con credenciales DGII, claves de firmado y parámetros de base de datos. Usa `scripts/setup_env.py` para regenerar el archivo si es necesario.
+- Migraciones: en entornos PostgreSQL ejecuta `poetry run alembic upgrade head` una vez configurado `DATABASE_URL`.
+- Seeds: la carpeta `docs/guide/` incluye ejemplos de flujos e2e para poblar datos de prueba.
+
+## Puesta en marcha (desarrollo)
+
+Levanta la API con recarga automática:
 
 ```bash
-git clone https://example.com/getupnet.git
-cd getupnet
-python scripts/setup_env.py
-poetry install
-uvicorn app.main:app --reload
+poetry run uvicorn app.main:app --reload
 ```
+
+La documentación interactiva estará disponible en `http://127.0.0.1:8000/docs` y el expediente de trazabilidad en `http://127.0.0.1:8000/redoc`. Los endpoints `/healthz`, `/readyz` y `/metrics` permiten integrar chequeos de infraestructura.
 
 ## Despliegue automatizado con Docker Compose
 
@@ -30,8 +60,30 @@ chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
 ```
 
-El script verifica la existencia de `.env.development`, construye las imágenes, ejecuta las migraciones de Alembic y deja la API expuesta en `https://localhost:8443` detrás de Nginx.
+El script valida `.env.development`, construye las imágenes, ejecuta las migraciones de Alembic y expone la API en `https://localhost:8443` detrás de Nginx con certificados auto-firmados para pruebas. Ajusta variables como `DOMAIN`, `SSL_CERT_PATH` y `SSL_KEY_PATH` antes de desplegar en entornos productivos.
 
-Consulta la guía completa en `docs/guide/` para detalles de operación, seguridad y cumplimiento DGII, incluyendo el paso a paso de despliegue en AWS descrito en `docs/guide/15-implementacion-aws.md`.
+## Estructura principal del proyecto
 
-Consulta la guía de arquitectura detallada en `docs/guide/16-arquitectura-eks.md` para la topología de microservicios y el plan EKS.
+- `app/`: servicios de autenticación, facturación, integración DGII, firmado y representación impresa.
+- `app/shared/`: configuración, base de datos y utilidades comunes (logging, tracing, seguridad).
+- `alembic/`: migraciones de base de datos y plantillas.
+- `frontend/`: shell inicial para panel administrativo o integración con Odoo.
+- `infra/`: definiciones de infraestructura como código para entornos cloud.
+- `scripts/`: automatizaciones de setup, despliegue y utilidades operativas.
+- `docs/guide/`: guías de implementación, cumplimiento y arquitectura.
+
+## Pruebas y verificación
+
+Ejecuta la suite de tests:
+
+```bash
+poetry run pytest
+```
+
+Para ejecutar pruebas end-to-end contra la sandbox DGII, configura las credenciales y certificados requeridos en el `.env.development`.
+
+## Documentación adicional
+
+- `docs/guide/15-implementacion-aws.md`: paso a paso para desplegar en AWS.
+- `docs/guide/16-arquitectura-eks.md`: topología recomendada e integración con EKS.
+- `docs/guide/`: guías de operación, seguridad y cumplimiento DGII.
