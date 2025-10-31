@@ -13,6 +13,42 @@ fail() {
   exit 1
 }
 
+prompt() {
+  local message="$1"
+  local default="${2:-Y}"
+  local response
+  printf '%s [%s]: ' "$message" "$default"
+  read -r response
+  if [ -z "$response" ]; then
+    response="$default"
+  fi
+  printf '%s' "$response"
+}
+
+ensure_pip() {
+  if python3 -m pip --version >/dev/null 2>&1; then
+    return
+  fi
+
+  info "Python se encuentra instalado pero no se detectó el módulo 'pip'."
+  if command -v apt-get >/dev/null 2>&1; then
+    local answer
+    answer="$(prompt "¿Deseas instalar python3-pip usando apt-get? Requiere privilegios de sudo" "Y")"
+    case "${answer^^}" in
+      Y|YES)
+        if ! (sudo apt-get update && sudo apt-get install -y python3-pip); then
+          fail "No fue posible instalar pip mediante apt-get."
+        fi
+        ;;
+      *)
+        fail "pip es requerido para completar la instalación. Instálalo manualmente e intenta de nuevo."
+        ;;
+    esac
+  else
+    fail "pip es requerido y no se puede instalar automáticamente en este entorno."
+  fi
+}
+
 require_cmd() {
   local cmd="$1"
   command -v "$cmd" >/dev/null 2>&1 || fail "Se requiere el comando '$cmd' pero no se encontró en PATH."
@@ -23,6 +59,7 @@ ensure_poetry() {
     return
   fi
 
+  ensure_pip
   info "Poetry no encontrado; intentando instalación local con pip."
   if ! python3 -m pip install --user --upgrade poetry; then
     fail "No fue posible instalar Poetry automáticamente. Instálalo manualmente y vuelve a ejecutar este script."
