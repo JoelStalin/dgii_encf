@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ARECF>
+  <ENCF>E310000000001</ENCF>
+  <TrackId>TRACK-001</TrackId>
+  <RNCEmisor>131415161</RNCEmisor>
+  <RNCReceptor>172839405</RNCReceptor>
+  <FechaRecepcion>2024-05-01T11:00:00Z</FechaRecepcion>
+  <Estado>RECIBIDO</Estado>
+</ARECF>

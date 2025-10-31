@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: ['*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          pip install --upgrade pip
+          pip install poetry==1.8.2
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Lint
+        run: poetry run ruff check .
+
+      - name: Type check
+        run: poetry run mypy app/dgii
+
+      - name: Tests
+        id: tests
+        run: poetry run pytest --cov-report=xml
+
+      - name: Build Docker image
+        run: docker build -t dgii-ecf-api .
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+        if: ${{ always() && steps.tests.outcome == 'success' }}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>RI - {{ encf }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #1f2933; }
+    header { border-bottom: 2px solid #2563eb; margin-bottom: 18px; }
+    h1 { font-size: 22px; margin: 0; }
+    .grid { display: flex; justify-content: space-between; }
+    .box { width: 48%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #cbd5f5; padding: 8px; text-align: left; }
+    th { background-color: #e0e7ff; }
+    .total { text-align: right; font-size: 18px; margin-top: 18px; }
+    .qr { text-align: center; margin-top: 18px; }
+    .qr img { width: 160px; height: 160px; }
+    footer { margin-top: 30px; font-size: 12px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Representación Impresa e-CF {{ encf }}</h1>
+    <p>Fecha emisión: {{ fecha_emision }}</p>
+  </header>
+  <section class="grid">
+    <div class="box">
+      <h2>Emisor</h2>
+      <p><strong>RNC:</strong> {{ rnc_emisor }}</p>
+      <p><strong>Nombre:</strong> {{ razon_social_emisor }}</p>
+      {% if direccion_emisor %}<p><strong>Dirección:</strong> {{ direccion_emisor }}</p>{% endif %}
+    </div>
+    <div class="box">
+      <h2>Receptor</h2>
+      <p><strong>RNC:</strong> {{ rnc_receptor }}</p>
+      <p><strong>Nombre:</strong> {{ razon_social_receptor }}</p>
+      {% if direccion_receptor %}<p><strong>Dirección:</strong> {{ direccion_receptor }}</p>{% endif %}
+    </div>
+  </section>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Cantidad</th>
+        <th>Precio Unitario</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.descripcion }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>{{ item.precio_unitario }}</td>
+        <td>{{ item.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="total"><strong>Total Factura:</strong> {{ monto_total }} DOP</div>
+
+  <div class="qr">
+    <img src="data:image/png;base64,{{ qr_base64 }}" alt="Código QR" />
+    <p>Escanea para validar: <a href="{{ qr_url }}">{{ qr_url }}</a></p>
+  </div>
+
+  <footer>
+    <p>Documento generado electrónicamente. Este documento contiene información sensible y debe protegerse conforme a la normativa DGII.</p>
+  </footer>
+</body>
+</html>

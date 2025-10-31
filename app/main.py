@@ -7,14 +7,24 @@ from fastapi.responses import JSONResponse
 
 from app.auth.routes import router as auth_router
 from app.billing.routes import router as billing_router
-from app.dgii.routes import router as dgii_router
-from app.receiver.routes import router as receiver_router
-from app.ri.routes import router as ri_router
+from app.core.logging import configure_logging, reset_request_context
+from app.dgii.jobs import start_dispatcher, stop_dispatcher
 from app.models.base import Base
+from app.receiver.routes import router as receiver_router
+from app.routers.acuse import router as dgii_acuse_router
+from app.routers.admin import router as admin_router
+from app.routers.anulacion import router as dgii_anulacion_router
+from app.routers.aprobacion import router as dgii_aprobacion_router
+from app.routers.auth import router as dgii_auth_router
+from app.routers.recepcion import router as dgii_recepcion_router
+from app.routers.rfce import router as dgii_rfce_router
+from app.ri.router import router as ri_router
 from app.shared.database import engine
 from app.shared.settings import settings
 from app.shared.tracing import ensure_trace_id
 from app.sign.routes import router as sign_router
+
+configure_logging()
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
@@ -24,12 +34,15 @@ async def add_tracing_headers(request: Request, call_next):  # type: ignore[over
     """Inserta encabezados de trazabilidad en todas las respuestas."""
 
     trace_id = ensure_trace_id(request)
-    response = await call_next(request)
-    response.headers.setdefault(settings.tracing_header, trace_id)
-    request_id = request.headers.get(settings.request_id_header)
-    if request_id:
-        response.headers.setdefault(settings.request_id_header, request_id)
-    return response
+    try:
+        response = await call_next(request)
+        response.headers.setdefault(settings.tracing_header, trace_id)
+        request_id = request.headers.get(settings.request_id_header)
+        if request_id:
+            response.headers.setdefault(settings.request_id_header, request_id)
+        return response
+    finally:
+        reset_request_context()
 
 
 if settings.cors_allow_origins:
@@ -66,10 +79,27 @@ async def metrics() -> JSONResponse:
 
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(sign_router, prefix="/api", tags=["Firmado"])
-app.include_router(dgii_router, prefix="/api", tags=["DGII"])
 app.include_router(receiver_router, prefix="/api", tags=["Recepcion"])
 app.include_router(billing_router, prefix="/api", tags=["Facturacion"])
-app.include_router(ri_router, prefix="/api", tags=["RI"])
+app.include_router(ri_router, prefix="/ri", tags=["RI"])
+
+app.include_router(dgii_auth_router, prefix="/api")
+app.include_router(dgii_recepcion_router, prefix="/api")
+app.include_router(dgii_rfce_router, prefix="/api")
+app.include_router(dgii_aprobacion_router, prefix="/api")
+app.include_router(dgii_anulacion_router, prefix="/api")
+app.include_router(dgii_acuse_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 if settings.database_url.startswith("sqlite"):
     Base.metadata.create_all(bind=engine)
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    await start_dispatcher()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    await stop_dispatcher()

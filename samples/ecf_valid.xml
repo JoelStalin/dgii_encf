@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eCF>
+  <Encabezado>
+    <ENCF>E310000000001</ENCF>
+    <TipoECF>E31</TipoECF>
+    <RNCEmisor>131415161</RNCEmisor>
+    <RNCComprador>172839405</RNCComprador>
+    <FechaEmision>2024-05-01T10:00:00Z</FechaEmision>
+    <MontoTotal>1500.00</MontoTotal>
+    <Moneda>DOP</Moneda>
+  </Encabezado>
+  <Detalle>
+    <Item>
+      <Descripcion>Servicio de consultoría</Descripcion>
+      <Cantidad>1.00</Cantidad>
+      <PrecioUnitario>1500.00</PrecioUnitario>
+      <Total>1500.00</Total>
+    </Item>
+  </Detalle>
+</eCF>

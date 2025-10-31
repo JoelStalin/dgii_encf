@@ -8,7 +8,9 @@ import {
   CompanyDetailLayout,
   CompanyInvoicesTab,
   CompanyOverviewTab,
+  CompanyAccountingTab,
   CompanyPlansTab,
+  CompanySettingsTab,
   CompanyUsersTab,
 } from "./pages/CompanyDetail";
 import { PlansPage } from "./pages/Plans";
@@ -56,9 +58,11 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="overview" replace /> },
           { path: "overview", element: <CompanyOverviewTab /> },
           { path: "invoices", element: <CompanyInvoicesTab /> },
+          { path: "accounting", element: <CompanyAccountingTab /> },
           { path: "plans", element: <CompanyPlansTab /> },
           { path: "certificates", element: <CompanyCertificatesTab /> },
           { path: "users", element: <CompanyUsersTab /> },
+          { path: "settings", element: <CompanySettingsTab /> },
         ],
       },
       {

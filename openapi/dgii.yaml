@@ -1,0 +1,620 @@
+openapi: 3.1.0
+info:
+  title: DGII e-CF API
+  version: 1.0.0
+  description: |
+    API para integrar los flujos DGII e-CF: autenticación, recepción, resumen FC, acuse,
+    aprobación comercial, anulación y representación impresa.
+servers:
+  - url: https://api.example.com
+    description: Servidor de referencia
+tags:
+  - name: DGII Auth
+  - name: DGII Recepción
+  - name: DGII RFCE
+  - name: DGII ACECF
+  - name: DGII ANECF
+  - name: DGII ARECF
+  - name: RI
+  - name: Admin
+paths:
+  /api/dgii/auth/token:
+    post:
+      tags: [DGII Auth]
+      summary: Obtiene un token de acceso DGII
+      responses:
+        '200':
+          description: Token generado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+  /api/dgii/recepcion/ecf:
+    post:
+      tags: [DGII Recepción]
+      summary: Envía un e-CF firmado a la DGII
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ECFSubmission'
+      responses:
+        '202':
+          description: Recepción aceptada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+  /api/dgii/recepcion/status/{track_id}:
+    get:
+      tags: [DGII Recepción]
+      summary: Consulta el estado de un envío e-CF
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estado actual del envío
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+  /api/dgii/rfce/resumen:
+    post:
+      tags: [DGII RFCE]
+      summary: Envía resumen de facturas de consumo electrónica
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RFCEPayload'
+      responses:
+        '202':
+          description: Resumen recibido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RFCEResponse'
+  /api/dgii/aprobacion/acecf:
+    post:
+      tags: [DGII ACECF]
+      summary: Informa aprobación comercial de un e-CF
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ACECFPayload'
+      responses:
+        '202':
+          description: Aprobación enviada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+  /api/dgii/anulacion/anecf:
+    post:
+      tags: [DGII ANECF]
+      summary: Solicita la anulación de un e-CF
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ANECFPayload'
+      responses:
+        '202':
+          description: Anulación en proceso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+  /api/dgii/acuse/arecef:
+    post:
+      tags: [DGII ARECF]
+      summary: Registra el acuse de recibo de un e-CF
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ARECFPayload'
+      responses:
+        '202':
+          description: Acuse registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+  /ri/render:
+    post:
+      tags: [RI]
+      summary: Genera representación impresa en HTML y/o PDF
+      parameters:
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [html, pdf, both]
+            default: both
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RIRequest'
+      responses:
+        '200':
+          description: Representación impresa generada
+          content:
+            application/json:
+              schema:
+            type: object
+            properties:
+              html:
+                type: string
+              pdf_base64:
+                type: string
+              qr_base64:
+                type: string
+              qr_url:
+                type: string
+  /api/admin/tenants/{tenant_id}/accounting/summary:
+    get:
+      tags: [Admin]
+      summary: Obtiene resumen contable del tenant
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Resumen contable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerSummary'
+  /api/admin/tenants/{tenant_id}/accounting/ledger:
+    get:
+      tags: [Admin]
+      summary: Lista asientos contables registrados
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: contabilizado
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Listado paginado de asientos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerPaginated'
+    post:
+      tags: [Admin]
+      summary: Registra un asiento contable
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LedgerEntryCreate'
+      responses:
+        '201':
+          description: Asiento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntry'
+  /api/admin/tenants/{tenant_id}/settings:
+    get:
+      tags: [Admin]
+      summary: Obtiene la configuración del tenant
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Configuración vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSettings'
+    put:
+      tags: [Admin]
+      summary: Actualiza la configuración del tenant
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSettingsUpdate'
+      responses:
+        '200':
+          description: Configuración actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSettings'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required: [access_token, expires_at]
+    ECFItem:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+          format: double
+        precioUnitario:
+          type: number
+          format: double
+      required: [descripcion, cantidad, precioUnitario]
+    ECFSubmission:
+      type: object
+      properties:
+        encf:
+          type: string
+        tipoECF:
+          type: string
+        rncEmisor:
+          type: string
+        rncReceptor:
+          type: string
+        fechaEmision:
+          type: string
+          format: date-time
+        montoTotal:
+          type: number
+        moneda:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ECFItem'
+      required: [encf, tipoECF, rncEmisor, rncReceptor, fechaEmision, montoTotal]
+    SubmissionResponse:
+      type: object
+      properties:
+        trackId:
+          type: string
+        status:
+          type: string
+        messages:
+          type: array
+          items:
+            type: string
+      required: [trackId, status]
+    StatusResponse:
+      type: object
+      properties:
+        trackId:
+          type: string
+        estado:
+          type: string
+        descripcion:
+          type: string
+      required: [trackId, estado]
+    RFCEPayload:
+      type: object
+      properties:
+        encf:
+          type: string
+        rncEmisor:
+          type: string
+        periodo:
+          type: string
+          format: date
+        cantidadFacturas:
+          type: integer
+        montoTotal:
+          type: number
+      required: [encf, rncEmisor, periodo, cantidadFacturas, montoTotal]
+    RFCEResponse:
+      type: object
+      properties:
+        codigo:
+          type: string
+        estado:
+          type: string
+        mensajes:
+          type: array
+          items:
+            type: string
+        encf:
+          type: string
+      required: [codigo, estado]
+    ACECFPayload:
+      type: object
+      properties:
+        encf:
+          type: string
+        rncEmisor:
+          type: string
+        rncReceptor:
+          type: string
+        fechaAprobacion:
+          type: string
+          format: date-time
+        comentario:
+          type: string
+      required: [encf, rncEmisor, rncReceptor, fechaAprobacion, comentario]
+    ANECFPayload:
+      type: object
+      properties:
+        encf:
+          type: string
+        rncEmisor:
+          type: string
+        motivo:
+          type: string
+        fechaAnulacion:
+          type: string
+          format: date-time
+      required: [encf, rncEmisor, motivo, fechaAnulacion]
+    ARECFPayload:
+      type: object
+      properties:
+        encf:
+          type: string
+        trackId:
+          type: string
+        rncEmisor:
+          type: string
+        rncReceptor:
+          type: string
+        fechaRecepcion:
+          type: string
+          format: date-time
+        estado:
+          type: string
+      required: [encf, trackId, rncEmisor, rncReceptor, fechaRecepcion, estado]
+    RIItem:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+        precioUnitario:
+          type: number
+      required: [descripcion, cantidad, precioUnitario]
+    RIRequest:
+      type: object
+      properties:
+        encf:
+          type: string
+        rncEmisor:
+          type: string
+        razonSocialEmisor:
+          type: string
+        rncReceptor:
+          type: string
+        razonSocialReceptor:
+          type: string
+        montoTotal:
+          type: number
+        fechaEmision:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RIItem'
+        direccionEmisor:
+          type: string
+        direccionReceptor:
+          type: string
+        qrUrl:
+          type: string
+      required: [encf, rncEmisor, razonSocialEmisor, rncReceptor, razonSocialReceptor, montoTotal, items]
+    LedgerSummary:
+      type: object
+      properties:
+        totales:
+          type: object
+          properties:
+            total_emitidos:
+              type: integer
+            total_aceptados:
+              type: integer
+            total_rechazados:
+              type: integer
+            total_monto:
+              type: string
+        contabilidad:
+          type: object
+          properties:
+            contabilizados:
+              type: integer
+            pendientes:
+              type: integer
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              periodo:
+                type: string
+              cantidad:
+                type: integer
+              monto:
+                type: string
+      required: [totales, contabilidad, series]
+    LedgerEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoice_id:
+          type: integer
+          nullable: true
+        encf:
+          type: string
+          nullable: true
+        referencia:
+          type: string
+        cuenta:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        debit:
+          type: string
+        credit:
+          type: string
+        fecha:
+          type: string
+          format: date-time
+      required: [id, referencia, cuenta, debit, credit, fecha]
+    LedgerEntryCreate:
+      type: object
+      properties:
+        invoice_id:
+          type: integer
+          nullable: true
+        referencia:
+          type: string
+        cuenta:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        debit:
+          type: string
+        credit:
+          type: string
+        fecha:
+          type: string
+          format: date-time
+      required: [referencia, cuenta, debit, credit, fecha]
+    LedgerPaginated:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        total:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+      required: [items, total, page, size]
+    TenantSettings:
+      type: object
+      properties:
+        moneda:
+          type: string
+        cuenta_ingresos:
+          type: string
+          nullable: true
+        cuenta_itbis:
+          type: string
+          nullable: true
+        cuenta_retenciones:
+          type: string
+          nullable: true
+        dias_credito:
+          type: integer
+        correo_facturacion:
+          type: string
+          nullable: true
+        telefono_contacto:
+          type: string
+          nullable: true
+        notas:
+          type: string
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+      required: [moneda, dias_credito, updated_at]
+    TenantSettingsUpdate:
+      type: object
+      properties:
+        moneda:
+          type: string
+        cuenta_ingresos:
+          type: string
+          nullable: true
+        cuenta_itbis:
+          type: string
+          nullable: true
+        cuenta_retenciones:
+          type: string
+          nullable: true
+        dias_credito:
+          type: integer
+        correo_facturacion:
+          type: string
+          nullable: true
+        telefono_contacto:
+          type: string
+          nullable: true
+        notas:
+          type: string
+          nullable: true
+      required: [moneda, dias_credito]

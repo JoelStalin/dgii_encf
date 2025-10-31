@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="eCF">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Encabezado" type="EncabezadoType"/>
+        <xs:element name="Detalle" type="DetalleType" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="EncabezadoType">
+    <xs:sequence>
+      <xs:element name="ENCF" type="xs:string"/>
+      <xs:element name="TipoECF" type="xs:string"/>
+      <xs:element name="RNCEmisor" type="xs:string"/>
+      <xs:element name="RNCComprador" type="xs:string"/>
+      <xs:element name="FechaEmision" type="xs:dateTime"/>
+      <xs:element name="MontoTotal" type="xs:decimal"/>
+      <xs:element name="Moneda" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DetalleType">
+    <xs:sequence>
+      <xs:element name="Item" type="ItemType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ItemType">
+    <xs:sequence>
+      <xs:element name="Descripcion" type="xs:string"/>
+      <xs:element name="Cantidad" type="xs:decimal"/>
+      <xs:element name="PrecioUnitario" type="xs:decimal"/>
+      <xs:element name="Total" type="xs:decimal"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

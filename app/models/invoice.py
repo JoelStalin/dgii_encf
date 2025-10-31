@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import List
 
-from sqlalchemy import ForeignKey, Numeric, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -25,5 +26,9 @@ class Invoice(Base):
     codigo_seguridad: Mapped[str | None] = mapped_column(String(6))
     total: Mapped[float] = mapped_column(Numeric(16, 2))
     fecha_emision: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    contabilizado: Mapped[bool] = mapped_column(Boolean, default=False)
+    accounted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    asiento_referencia: Mapped[str | None] = mapped_column(String(64))
 
     tenant: Mapped[Tenant] = relationship(backref="invoices")
+    ledger_entries: Mapped[List["InvoiceLedgerEntry"]] = relationship("InvoiceLedgerEntry", back_populates="invoice")

@@ -18,14 +18,33 @@ require_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || fail "Se requiere el comando '$cmd' pero no se encontró en PATH."
 }
 
+ensure_poetry() {
+  if command -v poetry >/dev/null 2>&1; then
+    return
+  fi
+
+  info "Poetry no encontrado; intentando instalación local con pip."
+  if ! python3 -m pip install --user --upgrade poetry; then
+    fail "No fue posible instalar Poetry automáticamente. Instálalo manualmente y vuelve a ejecutar este script."
+  fi
+
+  local user_bin="${HOME}/.local/bin"
+  if [ -d "$user_bin" ] && ! command -v poetry >/dev/null 2>&1; then
+    export PATH="$user_bin:$PATH"
+    hash -r 2>/dev/null || true
+  fi
+
+  command -v poetry >/dev/null 2>&1 || fail "Se requiere el comando 'poetry' pero no se encontró en PATH incluso después de intentar instalarlo."
+}
+
 info "Verificando dependencias del sistema"
 require_cmd python3
-require_cmd poetry
+ensure_poetry
 
 python3 <<'PY'
 import sys
 
-REQUIRED = (3, 11)
+REQUIRED = (3, 12)
 if sys.version_info < REQUIRED:
     version = ".".join(map(str, sys.version_info[:3]))
     required = ".".join(map(str, REQUIRED))
