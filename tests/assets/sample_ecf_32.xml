@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eCF>
+  <Encabezado>
+    <RNCEmisor>101234567</RNCEmisor>
+    <RNCComprador>102345678</RNCComprador>
+    <TipoECF>32</TipoECF>
+    <ENCF>E3200000001</ENCF>
+    <MontoTotal>1000.00</MontoTotal>
+  </Encabezado>
+  <Detalle>
+    <Descripcion>Servicio</Descripcion>
+    <Cantidad>1.00</Cantidad>
+    <PrecioUnitario>1000.00</PrecioUnitario>
+    <Total>1000.00</Total>
+  </Detalle>
+</eCF>

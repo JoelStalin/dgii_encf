@@ -28,6 +28,9 @@ pillow = "^10.3.0"
 tenacity = "^8.2.3"
 python-multipart = "^0.0.9"
 reportlab = "^4.1.0"
+defusedxml = "^0.7.1"
+slowapi = "^0.1.9"
+python-json-logger = "^2.0.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
