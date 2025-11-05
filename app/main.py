@@ -1,46 +1,37 @@
-"""FastAPI application entrypoint."""
-from __future__ import annotations
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import FastAPI, Request, Response
+# Optional rate limit (slowapi) wiring - non-fatal if package missing
+try:
+    from slowapi import Limiter
+    from slowapi.middleware import SlowAPIMiddleware
+    from slowapi.util import get_remote_address
+    limiter = Limiter(key_func=get_remote_address)
+    slowapi_available = True
+except Exception:
+    limiter = None
+    slowapi_available = False
 
-from app.api.router import api_router
-from app.infra.logging import configure_logging
-from app.infra.settings import settings
-from app.security.auth import setup_security
-from app.security.rate_limit import attach_rate_limiter
+from app.api.enfc_routes import router as enfc_router
 
+app = FastAPI(title="dgii_encf", version="0.1.0")
 
-def create_app() -> FastAPI:
-    configure_logging()
-    app = FastAPI(title=settings.app_name, version="2.0.0")
+# CORS: explicit allowed origins (example). Adjust as needed.
+origins = [
+    "https://enfc.getupsoft.com.do",
+    "https://example-client.local",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    setup_security(app, allowed_origins=settings.cors_allow_origins)
-    attach_rate_limiter(app, rate_limit_per_minute=settings.rate_limit_per_minute)
+# Attach slowapi middleware if available
+if slowapi_available and limiter:
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
 
-    app.include_router(api_router, prefix="/api")
-
-    @app.middleware("http")
-    async def security_headers(request: Request, call_next) -> Response:  # type: ignore[override]
-        response = await call_next(request)
-        response.headers.setdefault("Content-Security-Policy", "default-src 'self'")
-        response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault("X-Content-Type-Options", "nosniff")
-        response.headers.setdefault("Referrer-Policy", "no-referrer")
-        return response
-
-    @app.get("/healthz", tags=["infra"])
-    async def healthz() -> dict[str, str]:
-        return {"status": "ok"}
-
-    @app.get("/readyz", tags=["infra"])
-    async def readyz() -> dict[str, str]:
-        return {"status": "ready"}
-
-    @app.get("/metrics", tags=["infra"])
-    async def metrics() -> dict[str, str]:
-        return {"app": settings.app_name, "env": settings.environment}
-
-    return app
-
-
-app = create_app()
+app.include_router(enfc_router)
