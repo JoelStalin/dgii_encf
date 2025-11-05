@@ -1,101 +1,66 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-info() {
-  printf '==> %s\n' "$1"
-}
+log() { printf "\033[1;36m[install]\033[0m %s\n" "$*"; }
+err() { printf "\033[1;31m[err]\033[0m %s\n" "$*"; }
 
-fail() {
-  printf 'Error: %s\n' "$1" >&2
-  exit 1
-}
-
-prompt() {
-  local message="$1"
-  local default="${2:-Y}"
-  local response
-  printf '%s [%s]: ' "$message" "$default"
-  read -r response
-  if [ -z "$response" ]; then
-    response="$default"
-  fi
-  printf '%s' "$response"
-}
-
-ensure_pip() {
-  if python3 -m pip --version >/dev/null 2>&1; then
-    return
-  fi
-
-  info "Python se encuentra instalado pero no se detectó el módulo 'pip'."
-  if command -v apt-get >/dev/null 2>&1; then
-    local answer
-    answer="$(prompt "¿Deseas instalar python3-pip usando apt-get? Requiere privilegios de sudo" "Y")"
-    case "${answer^^}" in
-      Y|YES)
-        if ! (sudo apt-get update && sudo apt-get install -y python3-pip); then
-          fail "No fue posible instalar pip mediante apt-get."
-        fi
-        ;;
-      *)
-        fail "pip es requerido para completar la instalación. Instálalo manualmente e intenta de nuevo."
-        ;;
-    esac
-  else
-    fail "pip es requerido y no se puede instalar automáticamente en este entorno."
-  fi
-}
-
-require_cmd() {
-  local cmd="$1"
-  command -v "$cmd" >/dev/null 2>&1 || fail "Se requiere el comando '$cmd' pero no se encontró en PATH."
-}
-
-ensure_poetry() {
-  if command -v poetry >/dev/null 2>&1; then
-    return
-  fi
-
-  ensure_pip
-  info "Poetry no encontrado; intentando instalación local con pip."
-  if ! python3 -m pip install --user --upgrade poetry; then
-    fail "No fue posible instalar Poetry automáticamente. Instálalo manualmente y vuelve a ejecutar este script."
-  fi
-
-  local user_bin="${HOME}/.local/bin"
-  if [ -d "$user_bin" ] && ! command -v poetry >/dev/null 2>&1; then
-    export PATH="$user_bin:$PATH"
-    hash -r 2>/dev/null || true
-  fi
-
-  command -v poetry >/dev/null 2>&1 || fail "Se requiere el comando 'poetry' pero no se encontró en PATH incluso después de intentar instalarlo."
-}
-
-info "Verificando dependencias del sistema"
-require_cmd python3
-ensure_poetry
-
-python3 <<'PY'
-import sys
-
-REQUIRED = (3, 12)
-if sys.version_info < REQUIRED:
-    version = ".".join(map(str, sys.version_info[:3]))
-    required = ".".join(map(str, REQUIRED))
-    raise SystemExit(f"Python {required}+ es requerido, se encontró {version}.")
-PY
-
-info "Creando archivo .env.development si no existe"
-if [ -f ".env.example" ]; then
-  python3 scripts/setup_env.py
+log "==> Preparando dependencias del sistema"
+if [ -f "scripts/system_deps.sh" ]; then
+  bash scripts/system_deps.sh
 else
-  info "No se encontró .env.example; omitiendo generación automática."
+  err "scripts/system_deps.sh no existe. Aborta."
+  exit 1
 fi
 
-info "Instalando dependencias vía Poetry"
-poetry install
+export PATH="$HOME/.local/bin:$PATH"
 
-info "Instalación completada. Activa el entorno con 'poetry shell' o utiliza 'poetry run <comando>'."
+if ! command -v python3 >/dev/null 2>&1; then
+  err "python3 no disponible."
+  exit 1
+fi
+
+if ! command -v pipx >/dev/null 2>&1; then
+  err "pipx no disponible tras ejecutar system_deps.sh."
+  exit 1
+fi
+
+pipx ensurepath || true
+export PATH="$HOME/.local/bin:$PATH"
+
+if command -v poetry >/dev/null 2>&1; then
+  log "Poetry detectado. Intentando actualización..."
+  pipx upgrade poetry || log "No fue posible actualizar Poetry (continuando)."
+else
+  log "Instalando Poetry mediante pipx..."
+  pipx install poetry || err "No se pudo instalar Poetry con pipx."
+fi
+
+USE_PIP_FALLBACK="${USE_PIP_FALLBACK:-0}"
+
+if [ -f "pyproject.toml" ] && [ "$USE_PIP_FALLBACK" != "1" ]; then
+  log "==> Instalando dependencias con Poetry"
+  poetry --version || { err "Poetry no disponible tras la instalación."; exit 1; }
+  poetry install --no-interaction --no-ansi
+else
+  log "==> Modo fallback: entorno virtual + pip"
+  python3 -m venv .venv
+  # shellcheck disable=SC1091
+  source .venv/bin/activate
+  python -m pip install --upgrade pip
+  if [ -f "scripts/python_deps.txt" ]; then
+    python -m pip install -r scripts/python_deps.txt
+  else
+    err "scripts/python_deps.txt no existe."
+    exit 1
+  fi
+fi
+
+PYV="$(python3 --version 2>/dev/null || true)"
+POEV="$(poetry --version 2>/dev/null || echo "Poetry no instalado")"
+PXV="$(pipx --version 2>/dev/null || echo "pipx no instalado")"
+
+log "Resumen: $PYV | $POEV | pipx $PXV"
+log "Instalación completada."
