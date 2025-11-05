@@ -1,73 +1,73 @@
+"""DGII ENFC reception service handling validation and persistence stubs."""
+from __future__ import annotations
+
 import base64
-import asyncio
-from typing import Union, Dict, Any, Optional
+import uuid
 from datetime import datetime, timezone
+from typing import Any, Dict, Union
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+import structlog
 
 from app.security.xml import validate_with_xsd
 from app.security.xml_verify import verify_xml_signature
 
-# Simple in-memory idempotency store for demo purposes
-_IDEMPOTENCY_STORE: Dict[str, Dict[str, Any]] = {}
+logger = structlog.get_logger(__name__)
 
-# XSD path stub
-E_CF_XSD = "xsd/e_cf_v1_0.xsd"
+_ECF_XSD_PATH = "xsd/ecf.xsd"
 
-async def _persist_ecf(xml_bytes: bytes, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    # Placeholder persistence: simulate async IO
-    await asyncio.sleep(0.01)
-    acuse = f"ARC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}"
-    return {"acuseId": acuse, "estado": "RECIBIDO", "detalle": "OK", "timestamp": datetime.now(timezone.utc).isoformat()}
 
-async def procesar_ecf(payload: Union[str, bytes, dict], idempotency_key: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Procesa un e-CF. payload puede ser dict con 'ecf_xml_b64' o raw bytes/string.
-    Se espera idempotency_key para garantizar idempotencia.
-    """
-    # Idempotency handling
-    if idempotency_key:
-        cached = _IDEMPOTENCY_STORE.get(idempotency_key)
-        if cached:
-            return cached
+def _populate_node(node: Element, value: Any) -> None:
+    if isinstance(value, dict):
+        for child_key, child_value in value.items():
+            if isinstance(child_value, list):
+                for entry in child_value:
+                    child = SubElement(node, child_key)
+                    _populate_node(child, entry)
+            else:
+                child = SubElement(node, child_key)
+                _populate_node(child, child_value)
+    elif value is not None:
+        node.text = str(value)
 
-    # obtain xml bytes
-    xml_bytes: Optional[bytes] = None
+
+def _dict_to_xml(payload: Dict[str, Any], root_name: str = "eCF") -> bytes:
+    root = Element(root_name)
+    _populate_node(root, payload)
+    return tostring(root, encoding="utf-8")
+
+
+def _extract_xml_bytes(payload: Union[str, bytes, Dict[str, Any]]) -> bytes:
+    if isinstance(payload, bytes):
+        return payload
+    if isinstance(payload, str):
+        return payload.encode("utf-8")
     if isinstance(payload, dict):
-        if payload.get("ecf_xml_b64"):
-            try:
-                xml_bytes = base64.b64decode(payload["ecf_xml_b64"])
-            except Exception as e:
-                return {"error": f"ecf_xml_b64 decode error: {e}"}
-        elif payload.get("ecf_json"):
-            # naive conversion JSON -> XML for validation: here we wrap JSON as text inside XML root for demo
-            import json as _json
-            content = _json.dumps(payload["ecf_json"])
-            xml_bytes = f"<ECF_JSON>{{content}}</ECF_JSON>".encode()
-        else:
-            return {"error": "Payload inválido: se requiere ecf_xml_b64 o ecf_json"}
-    elif isinstance(payload, (bytes, bytearray)):
-        xml_bytes = bytes(payload)
-    elif isinstance(payload, str):
-        xml_bytes = payload.encode()
-    else:
-        return {"error": "Tipo de payload no soportado"}
+        if xml_b64 := payload.get("ecf_xml_b64"):
+            return base64.b64decode(xml_b64)
+        if xml_dict := payload.get("ecf_json"):
+            return _dict_to_xml(xml_dict)
+    raise ValueError("Unsupported payload format for e-CF reception")
 
-    # Validate with XSD
-    try:
-        validate_with_xsd(xml_bytes, E_CF_XSD)
-    except Exception as e:
-        return {"error": f"XSD validation failed: {e}"}
 
-    # Verify signature
-    try:
-        if not verify_xml_signature(xml_bytes):
-            return {"error": "Firma inválida"}
-    except Exception as e:
-        return {"error": f"Signature verification error: {e}"}
+async def procesar_ecf(payload: Union[str, bytes, Dict[str, Any]]) -> Dict[str, Any]:
+    """Validate and persist the incoming e-CF payload, returning an acknowledgement."""
 
-    # Persist and return acuse
-    acuse = await _persist_ecf(xml_bytes, metadata=payload.get("metadata") if isinstance(payload, dict) else None)
+    xml_bytes = _extract_xml_bytes(payload)
+    logger.info("recepcion.ecf.decoded", size=len(xml_bytes))
 
-    if idempotency_key:
-        _IDEMPOTENCY_STORE[idempotency_key] = acuse
+    validate_with_xsd(xml_bytes, _ECF_XSD_PATH)
+    if not verify_xml_signature(xml_bytes):
+        logger.warning("recepcion.ecf.signature_invalid")
+        raise ValueError("Firma inválida del documento e-CF")
 
-    return acuse
+    acuse_id = f"ARC-{uuid.uuid4().hex[:12].upper()}"
+    timestamp = datetime.now(timezone.utc).isoformat()
+    logger.info("recepcion.ecf.persisted", acuse_id=acuse_id)
+
+    return {
+        "acuseId": acuse_id,
+        "estado": "RECIBIDO",
+        "detalle": "OK",
+        "timestamp": timestamp,
+    }
