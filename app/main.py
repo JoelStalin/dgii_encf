@@ -3,21 +3,28 @@ from __future__ import annotations
 
 from fastapi import FastAPI, Request, Response
 
+from app.api.enfc_routes import router as enfc_router
 from app.api.router import api_router
 from app.infra.logging import configure_logging
 from app.infra.settings import settings
 from app.security.auth import setup_security
 from app.security.rate_limit import attach_rate_limiter
 
+ENFC_TAG_METADATA = {
+    "name": "ENFC",
+    "description": "Rutas DGII ENFC para recepción y autenticación de e-CF.",
+}
+
 
 def create_app() -> FastAPI:
     configure_logging()
-    app = FastAPI(title=settings.app_name, version="2.0.0")
+    app = FastAPI(title=settings.app_name, version="2.0.0", openapi_tags=[ENFC_TAG_METADATA])
 
     setup_security(app, allowed_origins=settings.cors_allow_origins)
     attach_rate_limiter(app, rate_limit_per_minute=settings.rate_limit_per_minute)
 
     app.include_router(api_router, prefix="/api")
+    app.include_router(enfc_router)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next) -> Response:  # type: ignore[override]

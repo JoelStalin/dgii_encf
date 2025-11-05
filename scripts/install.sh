@@ -81,7 +81,7 @@ ensure_poetry
 python3 <<'PY'
 import sys
 
-REQUIRED = (3, 12)
+REQUIRED = (3, 11)
 if sys.version_info < REQUIRED:
     version = ".".join(map(str, sys.version_info[:3]))
     required = ".".join(map(str, REQUIRED))
@@ -96,6 +96,26 @@ else
 fi
 
 info "Instalando dependencias vía Poetry"
-poetry install
+
+# Permite personalizar grupos opcionales via POETRY_INSTALL_GROUPS (por defecto "dev").
+POETRY_INSTALL_GROUPS=${POETRY_INSTALL_GROUPS:-dev}
+poetry_install_args=(install)
+if [ -n "$POETRY_INSTALL_GROUPS" ]; then
+  poetry_install_args+=(--with "$POETRY_INSTALL_GROUPS")
+fi
+
+if ! poetry "${poetry_install_args[@]}"; then
+  info "Poetry reportó un problema al instalar dependencias; intentando regenerar poetry.lock"
+  lock_args=(lock)
+  if poetry lock --help 2>&1 | grep -q -- "--no-update"; then
+    lock_args+=(--no-update)
+  fi
+
+  if ! poetry "${lock_args[@]}" >/dev/null 2>&1; then
+    info "Fallo 'poetry ${lock_args[*]}'; intentando 'poetry lock' completo"
+    poetry lock || fail "No se pudo regenerar poetry.lock automáticamente."
+  fi
+  poetry "${poetry_install_args[@]}" || fail "'poetry install' continuó fallando incluso luego de regenerar poetry.lock."
+fi
 
 info "Instalación completada. Activa el entorno con 'poetry shell' o utiliza 'poetry run <comando>'."
