@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT_DIR"
+ROOT_DIR="$(cd "$(dirname "
+${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR" || exit 1
 
 log() { printf "\033[1;36m[install]\033[0m %s\n" "$*"; }
-err() { printf "\033[1;31m[err]\033[0m %s\n" "$*"; }
+err() { printf "\033[1;31m[err]\033[0m %s\n" "$*" >&2; }
 
 log "==> Preparando dependencias del sistema"
 if [ -f "scripts/system_deps.sh" ]; then
@@ -35,14 +36,17 @@ if command -v poetry >/dev/null 2>&1; then
   pipx upgrade poetry || log "No fue posible actualizar Poetry (continuando)."
 else
   log "Instalando Poetry mediante pipx..."
-  pipx install poetry || err "No se pudo instalar Poetry con pipx."
+  if ! pipx install poetry; then
+    err "No se pudo instalar Poetry con pipx."
+    # continuamos para que la verificación siguiente falle de forma clara si no está instalado
+  fi
 fi
 
 USE_PIP_FALLBACK="${USE_PIP_FALLBACK:-0}"
 
 if [ -f "pyproject.toml" ] && [ "$USE_PIP_FALLBACK" != "1" ]; then
   log "==> Instalando dependencias con Poetry"
-  poetry --version || { err "Poetry no disponible tras la instalación."; exit 1; }
+  poetry --version >/dev/null 2>&1 || { err "Poetry no disponible tras la instalación."; exit 1; }
   poetry install --no-interaction --no-ansi
 else
   log "==> Modo fallback: entorno virtual + pip"
