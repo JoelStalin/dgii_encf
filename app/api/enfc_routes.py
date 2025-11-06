@@ -1,3 +1,4 @@
+# FILE: app/api/enfc_routes.py
 """FastAPI router exposing DGII ENFC validation endpoints."""
 from __future__ import annotations
 
@@ -7,7 +8,9 @@ from typing import Any, Dict, Tuple
 
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 import structlog
+from pydantic import ValidationError
 
+from app.api.schemas.enfc_schemas import AprobacionReq, CertReq, RecepcionReq
 from app.services.aprobacion_service import procesar_aprobacion
 from app.services.auth_service import emitir_semilla, validar_certificado
 from app.services.idempotency import idempotency_store
@@ -89,7 +92,11 @@ async def recepcion_ecf(
 
     try:
         if content_type == "application/json":
-            payload = json.loads(body.decode())
+            try:
+                payload_dict = json.loads(body.decode())
+                payload = RecepcionReq(**payload_dict).model_dump()
+            except (json.JSONDecodeError, ValidationError) as exc:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"JSON inválido: {exc}") from exc
         else:
             payload = body
         result = await procesar_ecf(payload)
@@ -125,7 +132,14 @@ async def aprobacion_ecf(
         return cached_body
 
     try:
-        payload = json.loads(body.decode()) if content_type == "application/json" else body
+        if content_type == "application/json":
+            try:
+                payload_dict = json.loads(body.decode())
+                payload = AprobacionReq(**payload_dict).model_dump()
+            except (json.JSONDecodeError, ValidationError) as exc:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"JSON inválido: {exc}") from exc
+        else:
+            payload = body
         result = await procesar_aprobacion(payload)
     except ValueError as exc:
         logger.warning("aprobacion.ecf.error", error=str(exc))
@@ -148,11 +162,5 @@ async def obtener_semilla() -> Dict[str, Any]:
 
 
 @router.post("/autenticacion/api/validacioncertificado")
-async def validacion_certificado(request: Request) -> Dict[str, Any]:
-    content_type = _normalize_content_type(request.headers.get("content-type"))
-    if content_type and content_type != "application/json":
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Solo JSON soportado")
-    body = await request.json() if content_type else {}
-    if not isinstance(body, dict):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="JSON inválido")
-    return validar_certificado(body)
+async def validacion_certificado(req: CertReq) -> Dict[str, Any]:
+    return validar_certificado(req.model_dump())
