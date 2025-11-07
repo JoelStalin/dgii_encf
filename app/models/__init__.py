@@ -1,5 +1,18 @@
 """Facilita importaciones de modelos."""
-from app.models import base, tenant, user, invoice, rfce, approval, receipt, anecf, storage, audit, accounting
+from app.models import (
+    base,
+    tenant,
+    user,
+    invoice,
+    rfce,
+    approval,
+    receipt,
+    anecf,
+    storage,
+    audit,
+    accounting,
+    billing,
+)
 
 __all__ = [
     "base",
@@ -13,4 +26,5 @@ __all__ = [
     "storage",
     "audit",
     "accounting",
+    "billing",
 ]

@@ -74,3 +74,55 @@ class LedgerSummaryResponse(BaseModel):
     totales: LedgerTotals
     contabilidad: LedgerStatusBreakdown
     series: List[LedgerMonthlyStat]
+
+
+class PlanBase(BaseModel):
+    name: str = Field(..., max_length=120)
+    precio_mensual: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
+    precio_por_documento: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
+    documentos_incluidos: int = Field(default=0, ge=0)
+    descripcion: Optional[str] = Field(default=None, max_length=255)
+
+
+class PlanCreate(PlanBase):
+    pass
+
+
+class PlanUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=120)
+    precio_mensual: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
+    precio_por_documento: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
+    documentos_incluidos: Optional[int] = Field(default=None, ge=0)
+    descripcion: Optional[str] = Field(default=None, max_length=255)
+
+
+class PlanResponse(PlanBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TenantPlanAssignment(BaseModel):
+    plan_id: Optional[int] = Field(default=None, ge=1)
+
+
+class BillingSummaryItem(BaseModel):
+    client_id: int
+    client_name: str
+    invoice_count: int
+    total_amount_due: Decimal
+
+
+class BillingSummaryResponse(BaseModel):
+    month: str
+    generated_at: datetime
+    items: List[BillingSummaryItem]
+    total_amount_due: Decimal
+
+
+class TenantPlanResponse(BaseModel):
+    tenant_id: int
+    plan: Optional[PlanResponse] = None
