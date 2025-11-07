@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dgii-ecf-web:latest
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dgii:dgii@db:5432/dgii
+      REDIS_URL: redis://redis:6379/0
+      SENTRY_DSN: ${SENTRY_DSN-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./xsd:/app/xsd:ro
+      - ./alembic:/app/alembic:ro
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./ops/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_started
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: dgii
+      POSTGRES_USER: dgii
+      POSTGRES_PASSWORD: dgii
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgii -d dgii"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no"]
+    restart: unless-stopped
+
+volumes:
+  pgdata:

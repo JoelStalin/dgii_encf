@@ -1,12 +1,18 @@
 """Global fixtures for DGII tests."""
 from __future__ import annotations
 
+import asyncio
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Generator, Tuple
 
 import pytest
+
+try:  # pragma: no cover - optional dependency for offline testing
+    import fakeredis.aioredis as fakeredis_aioredis
+except ModuleNotFoundError:  # pragma: no cover
+    fakeredis_aioredis = None
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -78,3 +84,24 @@ def configured_settings(certificate_bundle: Tuple[Path, bytes, rsa.RSAPrivateKey
     finally:
         settings.dgii_cert_p12_path = original_path
         settings.dgii_cert_p12_password = original_password
+
+
+@pytest.fixture(autouse=True)
+async def fake_redis_backend(monkeypatch: pytest.MonkeyPatch):
+    from app.security import rate_limit
+
+    if fakeredis_aioredis is not None:
+        redis_instance = fakeredis_aioredis.FakeRedis()
+    else:
+        from app.utils.redis_stub import Redis
+
+        redis_instance = Redis()
+    monkeypatch.setattr(rate_limit, "_default_redis_factory", lambda _url: redis_instance)
+    try:
+        yield
+    finally:
+        close = getattr(redis_instance, "close", None)
+        if close is not None:
+            result = close()
+            if asyncio.iscoroutine(result):  # pragma: no branch
+                await result
