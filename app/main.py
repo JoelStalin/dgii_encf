@@ -96,6 +96,10 @@ def create_app() -> FastAPI:
     async def on_shutdown() -> None:
         await shutdown_rate_limiter(app)
 
+    @app.get("/health", tags=["infra"], include_in_schema=False)
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.get("/healthz", tags=["infra"], include_in_schema=False)
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
