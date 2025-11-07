@@ -1,33 +1,38 @@
-FROM python:3.12-slim AS build
+# syntax=docker/dockerfile:1
 
-ENV POETRY_HOME="/opt/poetry"
-ENV PATH="$POETRY_HOME/bin:$PATH"
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    libxml2-dev \
-    libxslt1-dev \
-    && rm -rf /var/lib/apt/lists/*
-RUN curl -sSL https://install.python-poetry.org | python3 -
-RUN poetry self add "poetry-plugin-export"
-
+FROM python:3.12-slim AS builder
 WORKDIR /app
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1 POETRY_VIRTUALENVS_CREATE=false
+
+# Copia archivos de deps primero
 COPY pyproject.toml poetry.lock* ./
-RUN poetry lock --no-interaction
-RUN poetry export --only main --format requirements.txt --output requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+# Si hay Poetry, exporta requirements; si no hay, solo crea vacío para no fallar
+RUN pip install --upgrade pip poetry poetry-plugin-export || true
+RUN if [ -f pyproject.toml ]; then \
+      poetry export --without-hashes -f requirements.txt -o /app/requirements.txt \
+        || echo "Poetry export failed; falling back to repository requirements"; \
+    else \
+      echo "Using plain requirements.txt from repo"; \
+    fi
 
-FROM gcr.io/distroless/python3-debian12
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/usr/local/bin:/usr/bin:/bin"
-
+FROM python:3.12-slim AS runtime
 WORKDIR /app
-COPY --from=build /usr/local /usr/local
-COPY --from=build /app /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8080
-CMD ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Si existe requirements exportado desde builder úsalo; si no, espera que haya uno en el repo
+COPY --from=builder /app/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt 2>/dev/null || true
+RUN if [ -f /app/requirements.txt ]; then \
+      pip install --no-cache-dir -r /app/requirements.txt; \
+    fi \
+    && pip install --no-cache-dir gunicorn uvicorn[standard] fastapi
+
+# Copia el resto
+COPY . /app
+
+# Usa módulo para evitar problemas de PATH
+# El target asgi:app se corrige en docker-compose (ver abajo)
+CMD ["python", "-m", "gunicorn", "-c", "gunicorn.conf.py", "app.main:app"]

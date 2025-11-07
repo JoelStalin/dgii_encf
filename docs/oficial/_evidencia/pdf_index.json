@@ -1,0 +1,100 @@
+[
+  {
+    "filename": "Descripcion-tecnica-de-facturacion-electronica.pdf",
+    "sha256": "6841ddf3d05384f5af595264378013e63e561b8d1b83ae963ebb190c6632e02a",
+    "size": 1905107,
+    "modified": "2025-11-07T20:19:59.168817+00:00",
+    "pages": 82
+  },
+  {
+    "filename": "Firmado de e-CF.pdf",
+    "sha256": "bb32bb04c170ac3e954166414dae583b28c4e3314578acdd532d15119d04b98e",
+    "size": 1283845,
+    "modified": "2025-11-07T20:19:59.180817+00:00",
+    "pages": 24
+  },
+  {
+    "filename": "Formato Acuse de Recibo v 1.0.pdf",
+    "sha256": "d48713b803461b4bceca22a52c7c62b5ecbf5ff861457fed9bd2666ebd93d2b0",
+    "size": 197791,
+    "modified": "2025-11-07T20:19:59.180817+00:00",
+    "pages": 6
+  },
+  {
+    "filename": "Formato Anulación de e-NCF v1.0.pdf",
+    "sha256": "a4f58709c05c3d149d45f7ef90e8a4e646af10a048ac590bc20038182547567f",
+    "size": 506229,
+    "modified": "2025-11-07T20:19:59.184817+00:00",
+    "pages": 10
+  },
+  {
+    "filename": "Formato Aprobación Comercial v1.0.pdf",
+    "sha256": "2fede306878c730a234210cac3192b92a02aa0841cb979d08f9c36fc273b0d22",
+    "size": 217252,
+    "modified": "2025-11-07T20:19:59.184817+00:00",
+    "pages": 7
+  },
+  {
+    "filename": "Formato Comprobante Fiscal Electrónico (e-CF) V1.0.pdf",
+    "sha256": "bd13acf00beae8004a58ba6bc006b4dfd911c4c5b23f3f018c3ccec599a25793",
+    "size": 2156428,
+    "modified": "2025-11-07T20:19:59.204817+00:00",
+    "pages": 0
+  },
+  {
+    "filename": "Formato Resumen Factura Consumo Electrónica v1.0.pdf",
+    "sha256": "24f650b527a37fb6a8deb2d985c14dade1db6be62113fa47d2bd0c066565e0e8",
+    "size": 281618,
+    "modified": "2025-11-07T20:19:59.208817+00:00",
+    "pages": 12
+  },
+  {
+    "filename": "Informe Técnico e-CF v1.0.pdf",
+    "sha256": "0299436d18e208267006c89955cb129f6b71c412b2c641f8b6a67b446813c703",
+    "size": 6066261,
+    "modified": "2025-11-07T20:19:59.272817+00:00",
+    "pages": 0
+  },
+  {
+    "filename": "Instructivo App Firma Digital.pdf",
+    "sha256": "9ad6e0162b230cad718d94a256b44d497d0a70d865cc818add84fc62374e5d18",
+    "size": 326451,
+    "modified": "2025-11-07T20:19:59.276818+00:00",
+    "pages": 5
+  },
+  {
+    "filename": "Instructivo Delegaciones de Roles de Facturación Electrónica.pdf",
+    "sha256": "bd730c9678bcacdfc66f46a21d7b62570f3a1d7d9c68f6e79ba5a210af11d029",
+    "size": 1594778,
+    "modified": "2025-11-07T20:19:59.284817+00:00",
+    "pages": 9
+  },
+  {
+    "filename": "Proceso Certificacion para ser Proveedor de Servicios eCF.pdf",
+    "sha256": "00ad81a663363ff747d3bd3d194e784f864d39f1ad4690ecbd4fb0b4e81be401",
+    "size": 4895453,
+    "modified": "2025-11-07T20:19:59.328818+00:00",
+    "pages": 22
+  },
+  {
+    "filename": "Proceso de Certificacion para ser Emisor Electronico.pdf",
+    "sha256": "1e4e53bde9f87dc9f0852e36b2e8819379e5444ed9a31501c9a8c7c321cbe6c1",
+    "size": 1678092,
+    "modified": "2025-11-07T20:19:59.344818+00:00",
+    "pages": 27
+  },
+  {
+    "filename": "Proceso-Certificacion-EmisorElectronico-Proveedor-Servicios-FECertificado.pdf",
+    "sha256": "d46564e625598332e20d9d9da7942209e41c23428a199d645e3d6036b25974ac",
+    "size": 1195891,
+    "modified": "2025-11-07T20:19:59.352818+00:00",
+    "pages": 20
+  },
+  {
+    "filename": "Representación Impresa (Modelos ilustrativos).pdf",
+    "sha256": "3f8da8532607d691c1930ccbac097a2ab92743788bd8543ab9d712606748ccb1",
+    "size": 1259835,
+    "modified": "2025-11-07T20:19:59.364818+00:00",
+    "pages": 17
+  }
+]

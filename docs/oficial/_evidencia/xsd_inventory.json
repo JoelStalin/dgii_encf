@@ -1,0 +1,77 @@
+[
+  {
+    "filename": "ACECF v.1.0.xsd",
+    "sha256": "524165085f172826e3927c367d11752fa8f05521d4884f7f9882dcc510c8d870",
+    "size": 3479
+  },
+  {
+    "filename": "ANECF v.1.0.xsd",
+    "sha256": "edd344f770f6911625ccbbef371f960e1a26c1534cc8565a6464f151e891fc9f",
+    "size": 5027
+  },
+  {
+    "filename": "ARECF v1.0.xsd",
+    "sha256": "c50b5c7f019d0b64cbcc0a0bdeeeed9aea4963e073b48c20f75d9ca744aebe50",
+    "size": 2803
+  },
+  {
+    "filename": "RFCE 32 v.1.0.xsd",
+    "sha256": "8e34be805ee6e690dfe125f73b91e7cf292fce6516cdd8ffd8c15d15e3f1340d",
+    "size": 15002
+  },
+  {
+    "filename": "Semilla v.1.0.xsd",
+    "sha256": "6c78a06a460f5204209d91d4f5eba5c731593bafaf3e3935a30c0bdf254df397",
+    "size": 476
+  },
+  {
+    "filename": "e-CF 31 v.1.0.xsd",
+    "sha256": "cc66cbc418ceefaa6437c97607308c3e0814d73070fbbf9e9a2a331d12cb8abc",
+    "size": 121323
+  },
+  {
+    "filename": "e-CF 32 v.1.0.xsd",
+    "sha256": "ab66dff0b08d743e2f188242025a0dcef45203ad05687280860d3b07a475991b",
+    "size": 121292
+  },
+  {
+    "filename": "e-CF 33 v.1.0.xsd",
+    "sha256": "253225ec947a3aaf86f69b086638334d6c848c0917a49c78fdd69e3fba7c8fe1",
+    "size": 122760
+  },
+  {
+    "filename": "e-CF 34 v.1.0.xsd",
+    "sha256": "8c1d66122df7e69a1ad29be832e06d6c904d88f7315b1d50e54efd45343cfd17",
+    "size": 120357
+  },
+  {
+    "filename": "e-CF 41 v.1.0.xsd",
+    "sha256": "d36d96ea07025ec9b4b361cca9170d4db6e7405f443a6551d17fa9e635539a73",
+    "size": 109629
+  },
+  {
+    "filename": "e-CF 43 v.1.0.xsd",
+    "sha256": "3e95bd01d9a1bc4def4d89bc8f83669ea30f94ed2de2fc0eb39ab45b8cf82237",
+    "size": 94766
+  },
+  {
+    "filename": "e-CF 44 v.1.0.xsd",
+    "sha256": "5b9af26d7c232c5d695ea05b40706b3c6595357c9f8500e9556d32550932cbbc",
+    "size": 112685
+  },
+  {
+    "filename": "e-CF 45 v.1.0.xsd",
+    "sha256": "b462dbbef7fc1eb30aeccc87638db9fb9400f5257a0ae21e6a72024be43b5951",
+    "size": 120104
+  },
+  {
+    "filename": "e-CF 46 v.1.0.xsd",
+    "sha256": "caba94726458ff53ccbd2d6f82c92d5bae5484432cbac25981e3a5e1b8223889",
+    "size": 114309
+  },
+  {
+    "filename": "e-CF 47 v.1.0.xsd",
+    "sha256": "80948b4783ff428613d713f477a29979c10d52eb4638eb1363399b04430df17f",
+    "size": 99919
+  }
+]

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- XSD stub for e-CF minimal -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-  <xs:element name="ECF_JSON" type="xs:string" minOccurs="0"/>
-  <xs:element name="ECF" type="xs:string" minOccurs="0"/>
-</xs:schema>
