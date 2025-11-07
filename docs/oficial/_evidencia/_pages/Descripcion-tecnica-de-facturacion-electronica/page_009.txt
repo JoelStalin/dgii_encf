@@ -1,0 +1,1 @@
+URLs del servicio TesteCF: Ambiente de pre-certificación: https://ecf.dgii.gov.do/ testecf /autenticacion CerteCF: Ambiente de certificación: https://ecf.dgii.gov.do/ certecf /autenticacion eCF: Ambiente de producción: https://ecf.dgii.gov.do/ ecf /autenticacion 8
