@@ -1,0 +1,1 @@
+25 URLs del servicio TesteCF: Ambiente de pre-certificación: https://ecf.dgii.gov.do/ testecf /consultatrackids ecf: Ambiente de producción: https://ecf.dgii.gov.do/ ecf /consultatrackids RECURSO /api/trackids/consulta REQUEST URL https://ecf.dgii.gov.do/{ambiente}/consultatrackids/api/ trackids/consulta?rncemisor=xxxxxxxxx&encf=xxxxxxxxxxxx MÉTODO GET MÉTODOS Y PARÁMETROS
