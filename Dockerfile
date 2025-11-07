@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN poetry self add "poetry-plugin-export"
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
+RUN poetry lock --no-interaction
 RUN poetry export --only main --format requirements.txt --output requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
