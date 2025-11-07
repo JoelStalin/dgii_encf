@@ -1,14 +1,31 @@
 """FastAPI application entrypoint."""
 from __future__ import annotations
 
-from fastapi import FastAPI, Request, Response
+import logging
+from typing import Any
+
+import sentry_sdk
+from fastapi import FastAPI, Request, Response, status
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.enfc_routes import router as enfc_router
 from app.api.router import api_router
+from app.db import check_database_connection
 from app.infra.logging import configure_logging
 from app.infra.settings import settings
 from app.security.auth import setup_security
-from app.security.rate_limit import attach_rate_limiter
+from app.security.rate_limit import configure_rate_limiter, init_rate_limiter, shutdown_rate_limiter
+
+LOGGER = logging.getLogger(__name__)
+INSTRUMENTATOR = Instrumentator(
+    should_group_status_codes=True,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    excluded_handlers={"/livez", "/readyz"},
+)
 
 ENFC_TAG_METADATA = {
     "name": "ENFC",
@@ -16,12 +33,40 @@ ENFC_TAG_METADATA = {
 }
 
 
+async def _is_redis_ready(app: FastAPI) -> bool:
+    redis_client = getattr(app.state, "redis_rate_limiter", None)
+    if redis_client is None:
+        return False
+    try:
+        await redis_client.ping()
+        return True
+    except Exception as exc:  # pragma: no cover - defensive
+        LOGGER.warning(
+            "Redis ping failed during readiness probe",
+            extra={"redis_url": settings.redis_url},
+            exc_info=exc,
+        )
+        return False
+
+
 def create_app() -> FastAPI:
     configure_logging()
+
+    if settings.sentry_dsn:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.environment,
+            traces_sample_rate=settings.sentry_traces_sample_rate,
+        )
+
     app = FastAPI(title=settings.app_name, version="2.0.0", openapi_tags=[ENFC_TAG_METADATA])
 
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
+    trusted_hosts = sorted({*settings.dgii_allowed_hosts, "localhost", "127.0.0.1", "testserver", "test"})
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
+
     setup_security(app, allowed_origins=settings.cors_allow_origins)
-    attach_rate_limiter(app, rate_limit_per_minute=settings.rate_limit_per_minute)
+    configure_rate_limiter(app, rate_limit_per_minute=settings.rate_limit_per_minute)
 
     app.include_router(api_router, prefix="/api")
     app.include_router(enfc_router)
@@ -33,19 +78,42 @@ def create_app() -> FastAPI:
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("X-Request-ID", request.headers.get("X-Request-ID", ""))
         return response
 
-    @app.get("/healthz", tags=["infra"])
+    @app.on_event("startup")
+    async def on_startup() -> None:
+        if not getattr(app.state, "metrics_configured", False):
+            INSTRUMENTATOR.instrument(app).expose(app, include_in_schema=False, endpoint="/metrics")
+            app.state.metrics_configured = True
+        try:
+            await init_rate_limiter(app, settings.redis_url)
+        except Exception as exc:  # pragma: no cover - fail fast
+            LOGGER.exception("Failed to initialise rate limiter", extra={"redis_url": settings.redis_url})
+            raise RuntimeError("Redis connection failed during startup") from exc
+
+    @app.on_event("shutdown")
+    async def on_shutdown() -> None:
+        await shutdown_rate_limiter(app)
+
+    @app.get("/healthz", tags=["infra"], include_in_schema=False)
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/readyz", tags=["infra"])
-    async def readyz() -> dict[str, str]:
-        return {"status": "ready"}
+    @app.get("/livez", tags=["infra"], include_in_schema=False)
+    async def livez() -> dict[str, str]:
+        return {"status": "alive"}
 
-    @app.get("/metrics", tags=["infra"])
-    async def metrics() -> dict[str, str]:
-        return {"app": settings.app_name, "env": settings.environment}
+    @app.get("/readyz", tags=["infra"], include_in_schema=False)
+    async def readyz() -> JSONResponse:
+        checks: dict[str, Any] = {
+            "database": await check_database_connection(),
+            "redis": await _is_redis_ready(app),
+        }
+        is_ready = all(checks.values())
+        payload = {"status": "ready" if is_ready else "degraded", "checks": checks}
+        status_code = status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE
+        return JSONResponse(status_code=status_code, content=payload)
 
     return app
 

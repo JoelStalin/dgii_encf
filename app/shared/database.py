@@ -2,35 +2,22 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Iterator
 
-from sqlalchemy import create_engine
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
-from app.shared.settings import settings
-
-engine_kwargs: dict[str, Any] = {"pool_pre_ping": True, "future": True}
-
-if settings.database_url.startswith("sqlite"):
-    engine_kwargs.update({
-        "connect_args": {"check_same_thread": False},
-        "poolclass": StaticPool,
-    })
-
-engine = create_engine(settings.database_url, **engine_kwargs)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
+from app.db import SyncSessionFactory
 
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
-    """Provee un contexto seguro para operaciones DB."""
+    """Provee un contexto seguro para operaciones DB reutilizando el engine async."""
 
-    session = SessionLocal()
+    session = SyncSessionFactory()
     try:
         yield session
         session.commit()
-    except Exception:
+    except Exception:  # pragma: no cover - defensive rollback
         session.rollback()
         raise
     finally:
