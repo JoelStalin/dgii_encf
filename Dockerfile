@@ -1,32 +1,48 @@
-FROM python:3.12-slim AS build
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim AS builder
 
-ENV POETRY_HOME="/opt/poetry"
-ENV PATH="$POETRY_HOME/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     libxml2-dev \
     libxslt1-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
-RUN curl -sSL https://install.python-poetry.org | python3 -
-RUN poetry self add "poetry-plugin-export"
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock* ./
-RUN poetry export --only main --format requirements.txt --output requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install --no-cache-dir --prefix=/install -r requirements.txt
+
 COPY . .
 
-FROM gcr.io/distroless/python3-debian12
+FROM python:3.12-slim AS runtime
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/usr/local/bin:/usr/bin:/bin"
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2 \
+    libxslt1.1 \
+    libffi8 \
+    libjpeg62-turbo \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup --system app && adduser --system --ingroup app app
 
 WORKDIR /app
-COPY --from=build /usr/local /usr/local
-COPY --from=build /app /app
 
-EXPOSE 8080
-CMD ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+COPY --from=builder /install /usr/local
+COPY . .
+
+USER app
+
+EXPOSE 8000
+
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app.main:app"]
