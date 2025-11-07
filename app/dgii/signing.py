@@ -1,62 +1,63 @@
-"""XML Digital Signature helpers for DGII e-CF flows."""
-from __future__ import annotations
-
-from pathlib import Path
-from typing import Union
-
-from cryptography.hazmat.primitives.serialization import pkcs12
 from lxml import etree
-from signxml import XMLSigner, methods
+from signxml import (
+    XMLSigner,
+    XMLVerifier,
+    SignatureMethod,
+    DigestAlgorithm,
+    CanonicalizationMethod,
+    SignatureConstructionMethod,
+)
+from cryptography.hazmat.primitives.serialization import pkcs12
 
-from app.dgii.exceptions import DGIISignError
+class XMLSigningService:
+    def __init__(self, p12_path: str, p12_password: str):
+        """
+        Initializes the XML signing service with a PKCS#12 certificate.
 
-XmlBytes = Union[bytes, bytearray]
+        :param p12_path: The path to the PKCS#12 file (.p12).
+        :param p12_password: The password for the PKCS#12 file.
+        """
+        with open(p12_path, "rb") as f:
+            p12 = pkcs12.load_key_and_certificates(f.read(), p12_password.encode())
 
+        self.private_key = p12[0]
+        self.certificate = p12[1]
 
-def sign_ecf(xml_bytes: XmlBytes, p12_path: str, p12_password: str) -> bytes:
-    """Sign an XML document with XMLDSig using RSA-SHA256.
+    def sign_xml(self, xml_content: bytes) -> bytes:
+        """
+        Signs an XML document using the loaded certificate and private key.
 
-    The DGII requires enveloped signatures that cover the full document (URI="").
-    """
+        :param xml_content: The XML content to sign, as bytes.
+        :return: The signed XML content, as bytes.
+        """
+        root = etree.fromstring(xml_content)
 
-    try:
-        root = etree.fromstring(xml_bytes)
-    except etree.XMLSyntaxError as exc:
-        raise DGIISignError(f"XML inválido: {exc}") from exc
-
-    private_key, certificate = _load_credentials(p12_path, p12_password)
-
-    signer = XMLSigner(
-        method=methods.enveloped,
-        signature_algorithm="rsa-sha256",
-        digest_algorithm="sha256",
-        c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
-    )
-
-    try:
-        signed_root = signer.sign(root, key=private_key, cert=certificate)
-    except Exception as exc:  # pragma: no cover - signxml raises varied exceptions
-        raise DGIISignError("Error firmando el documento e-CF") from exc
-
-    return etree.tostring(signed_root, encoding="utf-8", xml_declaration=True)
-
-
-def _load_credentials(p12_path: str, password: str):
-    """Load key and certificate from PKCS#12 bundle."""
-
-    try:
-        raw = Path(p12_path).read_bytes()
-    except OSError as exc:
-        raise DGIISignError(f"No se pudo leer el certificado en {p12_path}") from exc
-
-    try:
-        private_key, certificate, _additional = pkcs12.load_key_and_certificates(
-            raw, password.encode("utf-8") if password else None
+        signer = XMLSigner(
+            method=SignatureConstructionMethod.enveloped,
+            signature_algorithm=SignatureMethod.RSA_SHA256,
+            digest_algorithm=DigestAlgorithm.SHA256,
+            c14n_algorithm=CanonicalizationMethod.EXCLUSIVE_XML_CANONICALIZATION_1_0,
         )
-    except Exception as exc:  # pragma: no cover - cryptography raises varied exceptions
-        raise DGIISignError("Certificado inválido o contraseña incorrecta") from exc
 
-    if not private_key or not certificate:
-        raise DGIISignError("El certificado no contiene clave privada o certificado")
+        signed_root = signer.sign(
+            root,
+            key=self.private_key,
+            cert=self.certificate.public_bytes(pkcs12.Encoding.PEM),
+            reference_uri="",
+        )
 
-    return private_key, certificate
+        return etree.tostring(signed_root, encoding="utf-8")
+
+def verify_xml_signature(signed_xml_content: bytes, certificate: bytes) -> bool:
+    """
+    Verifies the digital signature of an XML document.
+
+    :param signed_xml_content: The signed XML content to verify, as bytes.
+    :param certificate: The PEM-encoded certificate to use for verification.
+    :return: True if the signature is valid, False otherwise.
+    """
+    try:
+        XMLVerifier().verify(signed_xml_content, x509_cert=certificate)
+        return True
+    except Exception:
+        return False

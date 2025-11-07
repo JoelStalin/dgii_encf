@@ -1,43 +1,62 @@
-"""XML validation helpers using DGII XSD schemas."""
-from __future__ import annotations
-
-from pathlib import Path
-from typing import Iterable, List
-
 from lxml import etree
+from pathlib import Path
 
-from app.dgii.exceptions import DGIIReceiptError
+XSD_DIR = Path(__file__).parent.parent.parent / "xsd"
 
-SCHEMAS_DIR = Path(__file__).resolve().parents[2] / "schemas"
+class XSDValidator:
+    def __init__(self, xsd_file: str):
+        """
+        Initializes the XSD validator with a specific XSD schema.
 
+        :param xsd_file: The filename of the XSD schema to use for validation.
+        """
+        xsd_path = XSD_DIR / xsd_file
+        if not xsd_path.exists():
+            raise FileNotFoundError(f"XSD schema not found at: {xsd_path}")
 
-def validate_xml(xml_bytes: bytes, xsd_name: str) -> None:
-    """Validate XML against one of the DGII schemas.
+        with open(xsd_path, "rb") as f:
+            xmlschema_doc = etree.parse(f)
+        self.schema = etree.XMLSchema(xmlschema_doc)
 
-    Raises:
-        ValueError: when the XML does not comply with the schema.
-        DGIIReceiptError: when the schema file is missing/unreadable.
+    def validate_xml(self, xml_content: bytes) -> bool:
+        """
+        Validates an XML content against the loaded XSD schema.
+
+        :param xml_content: The XML content to validate, as bytes.
+        :return: True if the XML is valid, False otherwise.
+        """
+        try:
+            xml_doc = etree.fromstring(xml_content)
+            self.schema.assertValid(xml_doc)
+            return True
+        except etree.DocumentInvalid:
+            return False
+        except etree.XMLSyntaxError:
+            return False
+
+def get_validator_for(e_cf_type: str) -> XSDValidator:
     """
+    Factory function to get a validator for a specific e-CF type.
+    """
+    schema_map = {
+        "31": "e-CF 31 v.1.0.xsd",
+        "32": "e-CF 32 v.1.0.xsd",
+        "33": "e-CF 33 v.1.0.xsd",
+        "34": "e-CF 34 v.1.0.xsd",
+        "41": "e-CF 41 v.1.0.xsd",
+        "43": "e-CF 43 v.1.0.xsd",
+        "44": "e-CF 44 v.1.0.xsd",
+        "45": "e-CF 45 v.1.0.xsd",
+        "46": "e-CF 46 v.1.0.xsd",
+        "47": "e-CF 47 v.1.0.xsd",
+        "ARECF": "ARECF v1.0.xsd",
+        "ACECF": "ACECF v.1.0.xsd",
+        "ANECF": "ANECF v.1.0.xsd",
+        "RFCE": "RFCE 32 v.1.0.xsd",
+    }
 
-    xml_doc = etree.fromstring(xml_bytes)
-    schema = _load_schema(xsd_name)
+    xsd_file = schema_map.get(e_cf_type)
+    if not xsd_file:
+        raise ValueError(f"Unknown e-CF type: {e_cf_type}")
 
-    if not schema.validate(xml_doc):
-        errors = _collect_errors(schema.error_log)
-        raise ValueError(f"XML inválido contra esquema {xsd_name}: {'; '.join(errors)}")
-
-
-def _load_schema(xsd_name: str) -> etree.XMLSchema:
-    path = SCHEMAS_DIR / xsd_name
-    if not path.exists():
-        raise DGIIReceiptError(f"No se encontró el esquema XSD requerido: {xsd_name}")
-
-    try:
-        schema_doc = etree.parse(str(path))
-    except OSError as exc:
-        raise DGIIReceiptError(f"No se pudo leer el esquema {xsd_name}") from exc
-    return etree.XMLSchema(schema_doc)
-
-
-def _collect_errors(errors: Iterable[etree._LogEntry]) -> List[str]:
-    return [f"Linea {err.line}: {err.message}" for err in errors]
+    return XSDValidator(xsd_file)
