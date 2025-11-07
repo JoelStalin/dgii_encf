@@ -1,0 +1,1 @@
+23 2 Funcionalidades 2.1 Cancelaciónde postulaciones Elcontribuyentecuenta conla posibilidad de cancelarunapostulación encualquiera delos paso s del 1 al 13 delFlujode certificación , especificandoelmotivode la decisión.

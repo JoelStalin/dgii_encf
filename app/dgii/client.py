@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 import httpx
 from httpx import AsyncClient, HTTPError, HTTPStatusError
@@ -197,14 +197,18 @@ class DGIIClient:
         token: str | None = None,
         idempotency_key: str | None = None,
         reutilizar_encf: bool = False,
+        usage_callback: Callable[[Dict[str, Any]], Awaitable[None]] | None = None,
     ) -> Dict[str, Any]:
-        return await self._submit(
+        payload = await self._submit(
             f"{self._recepcion_base}/ecf",
             xml_bytes,
             token=token,
             idempotency_key=idempotency_key,
             extra_headers={"X-Reutilizar-ENCF": "true"} if reutilizar_encf else None,
         )
+        if usage_callback:
+            await usage_callback(payload)
+        return payload
 
     async def send_rfce(
         self,
