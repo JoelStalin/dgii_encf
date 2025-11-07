@@ -8,6 +8,7 @@ from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models.billing import Plan, UsageRecord
 
 
 class Tenant(Base):
@@ -18,6 +19,7 @@ class Tenant(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     rnc: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
     env: Mapped[str] = mapped_column(String(20), default="testecf")
+    plan_id: Mapped[int | None] = mapped_column(ForeignKey("billing_plans.id", ondelete="SET NULL"), nullable=True)
     dgii_base_ecf: Mapped[str] = mapped_column(String(255))
     dgii_base_fc: Mapped[str] = mapped_column(String(255))
     cert_ref: Mapped[Optional[str]] = mapped_column(String(255))
@@ -25,6 +27,8 @@ class Tenant(Base):
 
     certificates: Mapped[List["Certificate"]] = relationship(back_populates="tenant")
     users: Mapped[List["User"]] = relationship(back_populates="tenant")
+    plan: Mapped[Plan | None] = relationship(back_populates="tenants")
+    usage_records: Mapped[List[UsageRecord]] = relationship(back_populates="tenant")
 
 
 class Delegation(Base):

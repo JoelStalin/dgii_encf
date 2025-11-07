@@ -1,0 +1,1 @@
+1. 1 1 1.Modelos ilustrativos deFacturadeCréditoFiscal Electrónica 1.1Modeloilustrativocontotalesal finaldelafactura 1El montodel campoValordel detalle de bienesoservicios,noincluye impuestosprecioxcantidad.
