@@ -1,0 +1,1 @@
+6 6 < > 1 1 1 A Pág. de B. FirmaDigital No. Campos Descripción Tipo Largo Máx. Validación Obligatoriedad ÁREA Signature SIGNATURE Firma Digital Firma digital sobreel archivode AcusedeRecibo FIN ÁRE SIGNATURE

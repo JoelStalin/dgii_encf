@@ -1,0 +1,1 @@
+11 Paso4. Pruebas de Simulación En esta etapa se generan facturas a partir de datos representativos de la operatividad real del contribuyente.

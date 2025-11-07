@@ -1,0 +1,1 @@
+Pág. 6 de 6 5. Firma Digital No. Campo Descripción Tipo Largo Máx. Validación Obligatoriedad ÁREA <Signature> SIGNATURE 1 1 FirmaDigital Firma digital sobreel archivode AprobaciónComercial 1 FINÁREA SIGNATURE
