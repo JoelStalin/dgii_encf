@@ -9,6 +9,7 @@ license = "MIT"
 python = ">=3.11,<3.13"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.30.0"}
+gunicorn = "^22.0.0"
 sqlalchemy = "^2.0.29"
 psycopg = {version = "^3.1.18", extras = ["binary"]}
 asyncpg = "^0.29.0"
