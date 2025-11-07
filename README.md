@@ -24,10 +24,16 @@ Backend FastAPI (Python 3.12) listo para desplegar en producción con Docker, Gu
 ## Puesta en marcha
 
 ```bash
-cp .env.example .env
 poetry install --sync  # o bien: pip install -r requirements-dev.txt
 make requirements      # exporta requirements.txt para la imagen
-make up                # levanta web + nginx + postgres + redis
+make up                # levanta web + nginx + postgres + redis usando `.env.example`
+```
+
+¿Quieres sobreescribir variables locales? Crea un archivo alternativo y apúntalo vía `ENV_FILE`:
+
+```bash
+cp .env.example .env.local
+ENV_FILE=.env.local make up
 ```
 
 Servicios expuestos:
