@@ -13,6 +13,8 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.enfc_routes import router as enfc_router
 from app.api.router import api_router
+from app.routers import admin as admin_router
+from app.routers import cliente as cliente_router
 from app.db import check_database_connection
 from app.infra.logging import configure_logging
 from app.infra.settings import settings
@@ -70,6 +72,8 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix="/api")
     app.include_router(enfc_router)
+    app.include_router(cliente_router.router)
+    app.include_router(admin_router.router)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next) -> Response:  # type: ignore[override]

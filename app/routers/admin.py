@@ -28,6 +28,7 @@ from app.admin.schemas import (
     TenantSettingsPayload,
     TenantSettingsResponse,
 )
+from app.core.auth import get_current_user, require_role
 from app.models.billing import Plan
 from app.models.accounting import InvoiceLedgerEntry, TenantSettings
 from app.models.invoice import Invoice
@@ -37,6 +38,21 @@ from app.portal_admin.reports import billing_summary
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+
+@router.get("/health", dependencies=[Depends(require_role("admin"))])
+def health() -> dict[str, str]:
+    return {"status": "ok", "scope": "admin"}
+
+
+@router.get("/usuarios", dependencies=[Depends(require_role("admin"))])
+def listar_usuarios_portal() -> dict[str, list[dict[str, str]]]:
+    return {"items": [{"id": "alice"}, {"id": "bob"}]}
+
+
+@router.post("/facturas/aprobar", dependencies=[Depends(require_role("admin"))])
+def aprobar_factura_portal(payload: dict, user=Depends(get_current_user)) -> dict[str, object]:
+    return {"approved": True, "by": user["id"], "input": payload}
 
 
 def _get_tenant_or_404(db: Session, tenant_id: int) -> Tenant:
