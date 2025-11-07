@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.billing.services import BillingError, BillingService, get_billing_service
 from app.core.config import settings
 from app.core.logging import bind_request_context
 from app.dgii.clients import DGIIClient
@@ -20,6 +21,7 @@ async def enviar_ecf(
     payload: ECFSubmission,
     token: str = BearerToken,
     client: DGIIClient = DGIIClientDep,
+    billing_service: BillingService = Depends(get_billing_service),
     _trace = Depends(bind_request_headers),
 ) -> SubmissionResponse:
     document = payload.to_model()
@@ -27,7 +29,18 @@ async def enviar_ecf(
     validate_xml(xml, "ECF.xsd")
     signed_xml = sign_ecf(xml, str(settings.dgii_cert_p12_path), settings.dgii_cert_p12_password)
     bind_request_context(tipo_ecf=document.tipo_ecf, encf=document.encf)
-    result = await client.send_ecf(signed_xml, token)
+    async def _usage_callback(result: dict) -> None:
+        track_id = _extract_first(result, ["track_id", "trackId", "track"])
+        try:
+            billing_service.record_usage_for_rnc(
+                rnc=payload.rnc_emisor,
+                ecf_type=payload.tipo_ecf,
+                track_id=track_id,
+            )
+        except BillingError as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+    result = await client.send_ecf(signed_xml, token, usage_callback=_usage_callback)
     response = _build_submission_response(result)
     await dispatcher.enqueue_status_check(response.track_id, token)
     return response
