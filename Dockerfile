@@ -5,15 +5,11 @@ WORKDIR /app
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1 POETRY_VIRTUALENVS_CREATE=false
 
 # Copia archivos de deps primero
-COPY pyproject.toml poetry.lock* ./
+COPY pyproject.toml ./
 # Si hay Poetry, exporta requirements; si no hay, solo crea vacío para no fallar
-RUN pip install --upgrade pip poetry poetry-plugin-export || true
-RUN if [ -f pyproject.toml ]; then \
-      poetry export --without-hashes -f requirements.txt -o /app/requirements.txt \
-        || echo "Poetry export failed; falling back to repository requirements"; \
-    else \
-      echo "Using plain requirements.txt from repo"; \
-    fi
+RUN pip install --upgrade pip poetry
+RUN poetry export --without-hashes -f requirements.txt -o /app/requirements.txt \
+    || echo "Poetry export failed; falling back to repository requirements"
 
 FROM python:3.12-slim AS runtime
 WORKDIR /app
@@ -24,11 +20,9 @@ RUN apt-get update \
 
 # Si existe requirements exportado desde builder úsalo; si no, espera que haya uno en el repo
 COPY --from=builder /app/requirements.txt /app/requirements.txt
-COPY requirements.txt /app/requirements.txt 2>/dev/null || true
 RUN if [ -f /app/requirements.txt ]; then \
       pip install --no-cache-dir -r /app/requirements.txt; \
-    fi \
-    && pip install --no-cache-dir gunicorn uvicorn[standard] fastapi
+    fi
 
 # Copia el resto
 COPY . /app
