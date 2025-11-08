@@ -7,7 +7,8 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1 POETRY_VIRTUALENVS_CREATE
 # Copia archivos de deps primero
 COPY pyproject.toml poetry.lock ./
 # Si hay Poetry, exporta requirements; si no hay, solo crea vacío para no fallar
-RUN pip install --upgrade pip poetry poetry-plugin-export
+RUN pip install --upgrade pip poetry
+RUN poetry self add poetry-plugin-export
 RUN poetry export --without-hashes -f requirements.txt -o /app/requirements.txt
 
 FROM python:3.12-slim AS runtime
